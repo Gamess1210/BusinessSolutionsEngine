@@ -1,0 +1,59 @@
+schema: spec-driven
+
+context: |
+  Project: Business Solutions Engine (BSE)
+  Owner: Comotion Business Solutions division
+
+  Tech stack: React 19, Vite, Tailwind CSS, Supabase (supabase-js v2), 
+  LangChain 0.3.x, Next.js API routes on Vercel serverless, 
+  Anthropic API (claude-sonnet-4-20250514), Google AI (gemini-2.0-flash),
+  Puppeteer (@sparticuz/chromium), Microsoft Graph API, Power Automate
+
+  Architecture:
+  - All AI pipeline steps use LangChain chains in src/lib/chains/
+  - Claude generates code and content; Gemini reviews code only
+  - Never use the same model for generation and review
+  - All gate state enforced server-side in Vercel API routes
+  - Frontend reflects state only — never controls pipeline progression
+  - Supabase is the state store; client GitHub repo is spec source of truth
+  - All documents follow comotion-a4-html-template.html standard
+
+  Six pipeline gates — human approval required at each:
+  - Gate 1: Brief Review
+  - Gate 2: Solutions Review
+  - Gate 3: Business Proposal (client-facing PDF, sent from app)
+  - Gate 4: Spec Approval (OpenSpec files in client repo)
+  - Gate 5: Code Review (Gemini scorecard + ESLint CC scores)
+  - Gate 6: Output Review (final client documents)
+
+  Conventions:
+  - TypeScript where possible, JavaScript otherwise
+  - Tailwind CSS for all styling — no CSS modules
+  - Error handling on every async operation
+  - All environment variables via process.env — never hardcode
+  - Comments only where logic is non-obvious
+  - Domain vocabulary from CONTEXT.md used in all identifiers
+  - Keep cyclomatic complexity below 10 per function
+  - All merges are manual — pipeline never merges to any branch
+
+rules:
+  proposal:
+    - State the problem clearly in non-technical language
+    - List affected gates and chains explicitly
+    - Include rollback/rejection flow for every gate
+    - Note any schema changes required
+  specs:
+    - Use WHEN/THEN/AND format for every scenario
+    - Every requirement must have at least one scenario
+    - Use four hashtags for Scenario headers (#### Scenario:)
+    - Use domain vocabulary from CONTEXT.md for all terms
+    - Reference the specific LangChain chain responsible for each behaviour
+  tasks:
+    - Break into atomic steps — one file or one function per task where possible
+    - Note which gate each task belongs to
+    - Flag any task that requires a schema migration
+    - Flag any task that touches a LangChain chain
+  design:
+    - Document model assignment explicitly (Claude vs Gemini)
+    - Note any Power Automate flows triggered
+    - Include error recovery path for every chain
