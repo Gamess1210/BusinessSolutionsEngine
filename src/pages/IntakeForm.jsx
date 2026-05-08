@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 export default function IntakeForm() {
   const { token } = useParams()
   const [tokenValid, setTokenValid] = useState(null)
-  const [engagement, setEngagement] = useState(null)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -38,7 +37,6 @@ export default function IntakeForm() {
             setTokenValid(true)
         } else {
             setTokenValid(true)
-            setEngagement(data)
         }
         
       } catch {

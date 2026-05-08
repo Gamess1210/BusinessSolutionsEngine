@@ -17,5 +17,12 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // BSE complexity rule — see Section 6.4 of BSE Instructions v5.1
+      // CC 1-10:  pass (green/warn)
+      // CC 11-20: error — auto-fed to codeFixChain before Gemini review
+      // CC 21+:   untestable — pipeline pauses, BA notified via Teams
+      'complexity': ['error', { 'max': 10 }],
+    },
   },
 ])

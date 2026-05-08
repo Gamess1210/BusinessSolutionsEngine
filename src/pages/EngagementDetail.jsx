@@ -146,7 +146,7 @@ export default function EngagementDetail() {
   )
 }
 
-function CaptureSection({ engagement, inputs, onInputAdded, onStatusChange }) {
+function CaptureSection({ engagement, inputs, onInputAdded }) {
   const [activeTab, setActiveTab] = useState('braindump')
   const [error, setError] = useState(null)
 
@@ -507,19 +507,90 @@ function GuidedModeInput({ engagementId, onSaved, onError }) {
   )
 }
 
+function GuidedInputDetail({ input }) {
+  if (!input.content?.answers) return null
+  return (
+    <div className="space-y-4">
+      {input.content.answers.map((item, i) => (
+        <div key={i} className="bg-white rounded border border-grey-mid p-3">
+          <div className="text-xs font-semibold text-grey-dark uppercase tracking-wide mb-1">
+            {item.section} — Q{i + 1}
+          </div>
+          <p className="text-xs text-grey-dark mb-2">{item.question}</p>
+          <p className="text-sm text-navy">
+            {item.answer || <span className="text-grey-mid italic">No answer</span>}
+          </p>
+          {item.notes && (
+            <p className="text-xs text-grey-dark mt-1 italic">Note: {item.notes}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BrainDumpDetail({ input }) {
+  return (
+    <div className="bg-white rounded border border-grey-mid p-3">
+      <p className="text-sm text-navy font-mono whitespace-pre-wrap">{input.content?.text}</p>
+    </div>
+  )
+}
+
+function TranscriptDetail({ input }) {
+  return (
+    <div className="bg-white rounded border border-grey-mid p-3">
+      <p className="text-sm text-navy font-mono whitespace-pre-wrap">{input.content?.text}</p>
+    </div>
+  )
+}
+
+const INTAKE_FIELDS = [
+  { label: 'Contact Name', key: 'contact_name' },
+  { label: 'Email', key: 'contact_email' },
+  { label: 'Organisation', key: 'organisation' },
+  { label: 'Department', key: 'department' },
+  { label: 'Problem Description', key: 'problem_description', multiline: true },
+  { label: 'Business Impact', key: 'impact_description', multiline: true },
+  { label: 'Constraints', key: 'constraints', multiline: true },
+]
+
+function ClientIntakeDetail({ input }) {
+  const c = input.content ?? {}
+  return (
+    <div className="space-y-3">
+      {INTAKE_FIELDS.filter(f => c[f.key]).map(f => (
+        <IntakeField key={f.label} label={f.label} value={c[f.key]} multiline={f.multiline} />
+      ))}
+    </div>
+  )
+}
+
+const INPUT_DETAIL_COMPONENTS = {
+  guided: GuidedInputDetail,
+  braindump: BrainDumpDetail,
+  transcript: TranscriptDetail,
+  client_intake: ClientIntakeDetail,
+}
+
+const INPUT_TYPE_LABELS = {
+  guided: 'Guided Mode',
+  braindump: 'Brain-dump',
+  transcript: 'Transcript',
+  client_intake: 'Client Intake',
+}
+
+function getInputTypeLabel(type) {
+  return INPUT_TYPE_LABELS[type] || type
+}
+
 function InputSummaryRow({ input }) {
   const [expanded, setExpanded] = useState(false)
-
-  const typeLabels = {
-    guided: 'Guided Mode',
-    braindump: 'Brain-dump',
-    transcript: 'Transcript',
-    client_intake: 'Client Intake',
-  }
 
   const time = new Date(input.created_at).toLocaleTimeString()
   const isPending = input.input_type === 'client_intake' && !input.content
   const hasContent = !!input.content
+  const DetailComponent = INPUT_DETAIL_COMPONENTS[input.input_type]
 
   return (
     <div className="border border-grey-mid rounded-lg overflow-hidden">
@@ -533,7 +604,7 @@ function InputSummaryRow({ input }) {
           isPending ? 'bg-yellow-400' : 'bg-cgreen'
         }`} />
         <span className="text-navy font-medium text-sm">
-          {typeLabels[input.input_type] || input.input_type}
+          {getInputTypeLabel(input.input_type)}
         </span>
         <span className="text-grey-dark text-xs">{time}</span>
         {isPending && (
@@ -548,62 +619,9 @@ function InputSummaryRow({ input }) {
         )}
       </div>
 
-      {expanded && hasContent && (
+      {expanded && hasContent && DetailComponent && (
         <div className="border-t border-grey-mid bg-grey-light px-4 py-4">
-
-          {input.input_type === 'guided' && input.content?.answers && (
-            <div className="space-y-4">
-              {input.content.answers.map((item, i) => (
-                <div key={i} className="bg-white rounded border border-grey-mid p-3">
-                  <div className="text-xs font-semibold text-grey-dark uppercase tracking-wide mb-1">
-                    {item.section} — Q{i + 1}
-                  </div>
-                  <p className="text-xs text-grey-dark mb-2">{item.question}</p>
-                  <p className="text-sm text-navy">
-                    {item.answer || <span className="text-grey-mid italic">No answer</span>}
-                  </p>
-                  {item.notes && (
-                    <p className="text-xs text-grey-dark mt-1 italic">Note: {item.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {(input.input_type === 'braindump' || input.input_type === 'transcript') && (
-            <div className="bg-white rounded border border-grey-mid p-3">
-              <p className="text-sm text-navy font-mono whitespace-pre-wrap">
-                {input.content?.text}
-              </p>
-            </div>
-          )}
-
-          {input.input_type === 'client_intake' && (
-            <div className="space-y-3">
-              {input.content?.contact_name && (
-                <IntakeField label="Contact Name" value={input.content.contact_name} />
-              )}
-              {input.content?.contact_email && (
-                <IntakeField label="Email" value={input.content.contact_email} />
-              )}
-              {input.content?.organisation && (
-                <IntakeField label="Organisation" value={input.content.organisation} />
-              )}
-              {input.content?.department && (
-                <IntakeField label="Department" value={input.content.department} />
-              )}
-              {input.content?.problem_description && (
-                <IntakeField label="Problem Description" value={input.content.problem_description} multiline />
-              )}
-              {input.content?.impact_description && (
-                <IntakeField label="Business Impact" value={input.content.impact_description} multiline />
-              )}
-              {input.content?.constraints && (
-                <IntakeField label="Constraints" value={input.content.constraints} multiline />
-              )}
-            </div>
-          )}
-
+          <DetailComponent input={input} />
         </div>
       )}
     </div>
