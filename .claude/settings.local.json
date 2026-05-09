@@ -8,7 +8,9 @@
       "Bash(openspec new *)",
       "Bash(openspec status *)",
       "Bash(openspec instructions *)",
-      "Bash(openspec validate *)"
+      "Bash(openspec validate *)",
+      "Bash(npm ls *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

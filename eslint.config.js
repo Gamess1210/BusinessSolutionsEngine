@@ -25,4 +25,11 @@ export default defineConfig([
       'complexity': ['error', { 'max': 10 }],
     },
   },
+  {
+    // Vercel serverless functions run in Node.js — allow Node globals
+    files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
