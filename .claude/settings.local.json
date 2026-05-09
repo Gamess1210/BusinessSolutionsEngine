@@ -4,7 +4,11 @@
       "Bash(npm run *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\" -Depth 2 -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(openspec validate *)"
     ]
   }
 }

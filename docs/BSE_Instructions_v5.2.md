@@ -1,8 +1,8 @@
-# Business Solutions Engine (BSE) — Full Project Instructions v5.1
+# Business Solutions Engine (BSE) — Full Project Instructions v5.2
 
-**How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0) and all prior pipeline planning notes.
+**How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0, v5.1) and all prior pipeline planning notes.
 
-**What changed from v5.0** Four architecture decisions were revised following the post-v5.0 review. Affected sections are marked [v5.1 CHANGE]. All other sections are identical to v5.0. See the change log at the end of this document for a full summary.
+**What changed from v5.1** Two additions were made following the post-v5.1 build session. Affected sections are marked [v5.2 CHANGE]. All other sections are identical to v5.1. See the change log at the end of this document for a full summary.
 
 ---
 
@@ -672,6 +672,13 @@ Before output generation, `openspec archive` runs: BSE calls `openspec archive {
 1. **Business Proposal PDF** — problem brief + solution options. Generated at Gate 3. Client-facing. Sent directly to client from the app.
 2. **Final Client Brief PDF** — refined post-spec summary. Generated at Gate 6. Client-facing. No scorecard data.
 3. **Review Loop Report PDF** — internal. Full review cycle detail including ESLint CC scores. Stored alongside client docs in SharePoint `_internal/` subfolder. Never sent to clients.
+4. **Project Summary PDF** — internal. Complete engagement audit trail including approved brief, approved solutions, gate approval trail with timestamps, Gemini scorecard, ESLint CC summary, review loop summary, and team member name. Generated at Gate 6. Never sent to clients. Stored at `Business Solutions/[ClientName]/[YYYY]/[ClientName]_[YYYY-MM-DD]_ProjectSummary.pdf`. [v5.2 NEW]
+
+**SharePoint upload failure recovery — Project Summary PDF only:** [v5.2 NEW]
+Upload failure is a blocking condition with three tiers of recovery:
+- **Tier 1 — Automatic retry:** up to 3 attempts with exponential backoff (1s, 2s, 4s). No BA involvement.
+- **Tier 2 — BA retry:** if all auto-retries fail, Gate 6 is blocked at `gate6_review`. BA notified via Power Automate Teams with error and link. BA triggers retry from the Gate 6 review screen without rerunning full output generation. Each BA retry increments `engagements.project_summary_upload_attempts`.
+- **Tier 3 — Manual escape hatch:** after `project_summary_upload_attempts >= 2`, a "Mark as manually uploaded" button appears. BA confirms with a mandatory note. Recorded in `gate_approvals` with `action = 'manual_override'` and note in `edits_made`. Engagement advances to `complete`. The system is never permanently blocked by a SharePoint outage.
 
 ---
 
@@ -732,6 +739,8 @@ sharepoint_proposal_url text             -- business proposal PDF [v5.1]
 sharepoint_brief_url  text
 sharepoint_deck_url   text
 sharepoint_report_url text               -- review loop report PDF
+sharepoint_project_summary_url text      -- project summary PDF [v5.2]
+project_summary_upload_attempts int default 0  -- tier 2/3 retry counter [v5.2]
 hubspot_deal_id       text               -- nullable; reserved for future CRM
 notes                 text
 ```
@@ -760,7 +769,8 @@ action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
                   'cc_pause_approved',             -- Gate 5: BA approved continuation after CC 21+
-                  'cc_pause_rejected'              -- Gate 5: BA rejected for refactor after CC 21+
+                  'cc_pause_rejected',             -- Gate 5: BA rejected for refactor after CC 21+
+                  'manual_override'                -- Gate 6: BA confirmed manual upload after 2 failed retries [v5.2]
                 ))
 edits_made      jsonb
 ```
@@ -1215,6 +1225,7 @@ Business Solutions/
               ├── [ClientName]_[YYYY-MM-DD]_BusinessProposal.pdf   ← Gate 3
               ├── [ClientName]_[YYYY-MM-DD]_Brief.pdf              ← Gate 6
               ├── [ClientName]_[YYYY-MM-DD]_Proposal.pdf           ← Gate 6
+              ├── [ClientName]_[YYYY-MM-DD]_ProjectSummary.pdf     ← Gate 6 (internal) [v5.2]
               └── _internal/
                     └── [ClientName]_[YYYY-MM-DD]_ReviewReport.pdf ← internal
 ```
@@ -1714,8 +1725,17 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 
 ---
 
-*Document version: 5.1*
+## v5.2 Change Log
+
+| # | Section affected | Change | Type |
+|---|---|---|---|
+| 1 | 7.8, 11, 9 (engagements, gate_approvals) | Project Summary PDF added as fourth document generated at Gate 6. Internal only. Complete engagement audit trail: brief, solutions, gate approval trail with timestamps, Gemini scorecard, ESLint CC summary, review loop summary, team member name. Stored at `[ClientName]_[YYYY-MM-DD]_ProjectSummary.pdf` alongside client docs. Never sent to clients. | New document |
+| 2 | 7.8, 9 (engagements, gate_approvals) | Three-tier SharePoint upload failure recovery added for Project Summary PDF. Tier 1: 3 auto-retries with exponential backoff. Tier 2: BA retry from Gate 6 screen, gate blocked until resolved. Tier 3: manual override escape hatch after 2 failed BA retries, recorded as `action = 'manual_override'` in `gate_approvals`. New columns: `sharepoint_project_summary_url`, `project_summary_upload_attempts`. New action value: `manual_override`. | Resilience pattern |
+
+---
+
+*Document version: 5.2*
 *Produced by: Comotion Business Solutions — Planning & Architecture*
-*Project Date: 2026-05-07*
-*Supersedes: v1.0, v2.0, v3.0, v4.0, v5.0 and all pipeline planning notes*
+*Project Date: 2026-05-09*
+*Supersedes: v1.0, v2.0, v3.0, v4.0, v5.0, v5.1 and all pipeline planning notes*
 *Build environment: VSCode + Claude Code*
