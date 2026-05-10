@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import NewEngagement from './pages/NewEngagement'
 import EngagementDetail from './pages/EngagementDetail'
+import BriefReview from './pages/review/BriefReview'
 import Login from './pages/Login'
 import { useAuth } from './hooks/useAuth'
 import IntakeForm from './pages/IntakeForm'
@@ -30,6 +31,7 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="new" element={<NewEngagement />} />
         <Route path="engagements/:id" element={<EngagementDetail />} />
+        <Route path="review/:id/brief" element={<BriefReview />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

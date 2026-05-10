@@ -59,18 +59,13 @@ export default function IntakeForm() {
     setSaving(true)
     setError(null)
     try {
-      const { error } = await supabase
-        .from('engagement_inputs')
-        .update({
-          content: {
-            ...form,
-            submitted_at: new Date().toISOString(),
-          },
-          source: 'client_intake',
-        })
-        .eq('intake_token', token)
-
-      if (error) throw error
+      const res = await fetch('/api/intake/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, ...form }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Submission failed')
       setSubmitted(true)
     } catch (err) {
       setError(err.message)
