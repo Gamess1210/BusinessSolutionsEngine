@@ -160,9 +160,48 @@ export default function EngagementDetail() {
   )
 }
 
-function CaptureSection({ engagement, inputs, onInputAdded }) {
+function CaptureSection({ engagement, inputs, onInputAdded, onStatusChange }) {
   const [activeTab, setActiveTab] = useState('braindump')
   const [error, setError] = useState(null)
+  const [pipelineRunning, setPipelineRunning] = useState(false)
+  const [success, setSuccess] = useState(null)
+
+  async function getSession() {
+    const { data, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw sessionError
+    return data.session
+  }
+
+  async function handleRunPipeline() {
+    setPipelineRunning(true)
+    setError(null)
+    setSuccess(null)
+    onStatusChange('brief_pending')
+    try {
+      const session = await getSession()
+      const res = await fetch('/api/pipeline/consolidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ engagementId: engagement.id }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        const msg = body.error || `Request failed (${res.status})`
+        const isApiKeyError = msg.includes('ANTHROPIC_API_KEY') || msg.includes('API key')
+        throw new Error(isApiKeyError ? 'AI service not yet configured — contact your administrator' : msg)
+      }
+      setSuccess('Brief generated — review ready')
+      setTimeout(() => onStatusChange('gate1_review'), 1500)
+    } catch (err) {
+      onStatusChange('captured')
+      setError(err.message)
+    } finally {
+      setPipelineRunning(false)
+    }
+  }
 
   const tabs = [
     { id: 'braindump', label: 'Brain-dump' },
@@ -223,15 +262,27 @@ function CaptureSection({ engagement, inputs, onInputAdded }) {
       
 
       {inputs.length > 0 && (
-        <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-between">
-          <p className="text-sm text-grey-dark">
-            Ready to generate brief and solutions.
-          </p>
-          <button className="bg-cgreen text-white px-6 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity">
-            Run AI Pipeline →
-          </button>
-        </div>
+        <PipelineFooter onRun={handleRunPipeline} running={pipelineRunning} success={success} />
       )}
+    </div>
+  )
+}
+
+function PipelineFooter({ onRun, running, success }) {
+  return (
+    <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-between">
+      {success ? (
+        <p className="text-sm text-cgreen font-semibold">{success}</p>
+      ) : (
+        <p className="text-sm text-grey-dark">Ready to generate brief and solutions.</p>
+      )}
+      <button
+        onClick={onRun}
+        disabled={running || !!success}
+        className="bg-cgreen text-white px-6 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        {running ? 'Generating Brief...' : 'Run AI Pipeline →'}
+      </button>
     </div>
   )
 }
