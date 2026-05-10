@@ -16,6 +16,7 @@
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sparticuz/chromium": "^148.0.0",
     "@supabase/supabase-js": "^2.105.4",
+    "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "^10.5.0",
     "langchain": "^0.3.37",
     "postcss": "^8.5.14",
