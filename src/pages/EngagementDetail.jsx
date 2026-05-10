@@ -21,22 +21,36 @@ const GUIDED_QUESTIONS = [
 
 const STATUS_STEPS = [
   { key: 'captured', label: 'Captured' },
+  { key: 'brief_pending', label: 'Generating Brief' },
   { key: 'gate1_review', label: 'Brief Review' },
   { key: 'gate2_review', label: 'Solutions Review' },
-  { key: 'gate3_review', label: 'Output Review' },
+  { key: 'gate3_review', label: 'Proposal Review' },
+  { key: 'gate4_review', label: 'Spec Approval' },
+  { key: 'gate5_review', label: 'Code Review' },
+  { key: 'gate6_review', label: 'Output Review' },
   { key: 'complete', label: 'Complete' },
 ]
 
 function StatusBar({ status }) {
+  if (status === 'failed') {
+    return (
+      <div className="bg-red-50 border border-cred text-cred text-sm font-semibold rounded px-4 py-3 mb-8">
+        Pipeline error — retry available
+      </div>
+    )
+  }
+
   const stepIndex = STATUS_STEPS.findIndex(s => s.key === status)
   const activeIndex = stepIndex === -1 ? 0 : stepIndex
+  const isPending = status === 'brief_pending'
+
   return (
     <div className="flex items-center gap-0 mb-8">
       {STATUS_STEPS.map((step, i) => (
         <div key={step.key} className="flex items-center">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
             i < activeIndex ? 'bg-cgreen text-white' :
-            i === activeIndex ? 'bg-navy text-white' :
+            i === activeIndex ? `bg-navy text-white${isPending ? ' animate-pulse' : ''}` :
             'bg-grey-mid text-grey-dark'
           }`}>
             {i < activeIndex && <span>✓</span>}
