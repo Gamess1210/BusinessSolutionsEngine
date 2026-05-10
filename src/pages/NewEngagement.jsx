@@ -45,6 +45,7 @@ export default function NewEngagement() {
 
   const [step, setStep] = useState(1)
   const [clientName, setClientName] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [organisation, setOrganisation] = useState('')
   const [department, setDepartment] = useState('')
   const [industry, setIndustry] = useState('financial_services')
@@ -53,10 +54,18 @@ export default function NewEngagement() {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  function getValidationError() {
+    if (!clientName.trim()) return 'Client name is required.'
+    const email = clientEmail.trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Client email must be a valid email address.'
+    if (!captureMode) return 'Please select a capture mode.'
+    if (!analysisMode) return 'Please select an analysis mode.'
+    return null
+  }
+
   async function handleCreate() {
-    if (!clientName.trim()) return setError('Client name is required.')
-    if (!captureMode) return setError('Please select a capture mode.')
-    if (!analysisMode) return setError('Please select an analysis mode.')
+    const validationError = getValidationError()
+    if (validationError) return setError(validationError)
 
     setSaving(true)
     setError(null)
@@ -66,6 +75,7 @@ export default function NewEngagement() {
         .from('engagements')
         .insert({
           client_name: clientName.trim(),
+          client_email: clientEmail.trim() || null,
           organisation: organisation.trim() || null,
           department: department.trim() || null,
           industry,
@@ -132,6 +142,19 @@ export default function NewEngagement() {
                 placeholder="e.g. John Smith"
                 className="w-full border border-grey-mid rounded px-4 py-2 text-sm focus:outline-none focus:border-navy"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-grey-dark uppercase tracking-wide mb-1">
+                Client Email
+              </label>
+              <input
+                type="email"
+                value={clientEmail}
+                onChange={e => setClientEmail(e.target.value)}
+                placeholder="e.g. john.smith@nedbank.co.za"
+                className="w-full border border-grey-mid rounded px-4 py-2 text-sm focus:outline-none focus:border-navy"
+              />
+              <p className="text-xs text-grey-dark mt-1">Used to send the business proposal at Gate 3</p>
             </div>
             <div>
               <label className="block text-xs font-semibold text-grey-dark uppercase tracking-wide mb-1">
