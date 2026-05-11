@@ -481,7 +481,7 @@ ESLint complexity scoring runs independently in pre-check and is displayed separ
 - `/new` — New engagement. Select input types and mode. Capture client email address. [v5.1 CHANGE]
 - `/engagements/[id]` — Engagement detail. Full record, gate status, AI outputs, approval controls.
 - `/review/[id]/brief` — Gate 1 review.
-- `/review/[id]/solutions` — Gate 2 review.
+- `/review/[id]/solutions` — Gate 2 review. Includes supplementary context panel — capture input tabs remain accessible at gate2_review status to allow the BA to add new inputs before Gate 3. A banner prompts re-run of consolidationChain and solution generation if new input is added.
 - `/review/[id]/proposal` — Gate 3 review. BA previews business proposal PDF. Approve/reject. Send button. [v5.1 NEW]
 - `/review/[id]/spec` — Gate 4 spec review. Renders OpenSpec markdown files. Sections flaggable for regeneration.
 - `/review/[id]/code` — Gate 5 code review. Gemini scorecard, ESLint CC scores per file, per-cycle review history, diff view, escalation flag. [v5.1 CHANGE]
@@ -654,7 +654,7 @@ Six mandatory approval gates. Status enforced server-side in every Vercel API ro
 | Gate | Trigger | BA Action | Notification |
 |---|---|---|---|
 | Gate 1 — Brief Review | Claude produces structured brief | Review, edit inline, approve or reject | Teams: client intake only |
-| Gate 2 — Solutions Review | Claude generates solutions | Edit, reorder, remove, add notes, approve | None |
+| Gate 2 — Solutions Review | Claude generates solutions | Edit, reorder, remove, add notes, approve. Add supplementary inputs at gate2_review if needed; banner offers to regenerate brief and solutions with updated context; Gate 2 approval resets on regeneration. | None |
 | Gate 3 — Business Proposal | `proposalGenerationChain` produces PDF | Preview PDF; approve and send to client email; or reject | Power Automate: email to client on send |
 | Gate 4 — Spec Approval | OpenSpec files committed to client repo | Review OpenSpec markdown; flag sections for regeneration; approve | None |
 | Gate 5 — Code Review | Review loop completes (threshold or max cycles) | Review Gemini scorecard, ESLint CC scores, cycle history, code diff; approve or reject. `/diagnose` available manually. | Teams: CC 21+ pause events only |
@@ -1625,6 +1625,7 @@ await triggerCcPauseNotification(engagementId, ccReport)
 | 16 | Fallow version floor | Default 2.46.0 (minimum for uncommitted-changes fix); adjust via `FALLOW_GATE_MIN_VERSION` env var if needed |
 | 17 | Client email address — is one recipient per engagement sufficient? | Assumed yes for now; multi-recipient CC can be added if needed before Phase 5 |
 | 18 | Business proposal — does the BA always send immediately on approval, or queue for later? | Assumed immediate send on approval; queued send can be added if workflow requires it |
+| 19 | Contextual re-injection at Gate 2 — feature specced in openspec/changes/contextual-reinjection/proposal.md. Full spec and tasks not yet written. | Must be implemented before Gate 3 build begins. Gate 2 approval must reset when re-injection is triggered. |
 
 ---
 
