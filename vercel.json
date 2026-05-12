@@ -8,6 +8,6 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!@vite|@react-refresh|@id|node_modules|src).*)", "destination": "/index.html" }
   ]
 }

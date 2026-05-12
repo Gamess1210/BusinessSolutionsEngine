@@ -14,9 +14,10 @@ function SectionCard({ title, children }) {
 }
 
 function BulletList({ items }) {
+  const list = Array.isArray(items) ? items : []
   return (
     <ul className="space-y-1.5">
-      {items.map((item, i) => (
+      {list.map((item, i) => (
         <li key={i} className="flex gap-2 text-sm text-grey-dark">
           <span className="text-cgreen mt-0.5 flex-shrink-0">•</span>
           <span>{item}</span>
@@ -39,7 +40,7 @@ function StakeholderTable({ stakeholders }) {
         {stakeholders.map((s, i) => (
           <tr key={i} className="border-b border-grey-mid last:border-0">
             <td className="py-2.5 pr-4 font-medium text-navy align-top">{s.role}</td>
-            <td className="py-2.5 text-grey-dark align-top">{s.impact}</td>
+            <td className="py-2.5 text-grey-dark align-top">{s.impact || s.concern}</td>
           </tr>
         ))}
       </tbody>
@@ -103,14 +104,20 @@ function BriefSections({ brief }) {
         <BulletList items={brief.constraints ?? []} />
       </SectionCard>
 
-      {brief.compliance_considerations?.length > 0 && (
+      {brief.compliance_considerations && (
         <SectionCard title="Compliance Considerations">
-          <BulletList items={brief.compliance_considerations} />
+          {Array.isArray(brief.compliance_considerations)
+            ? <BulletList items={brief.compliance_considerations} />
+            : <p className="text-sm text-grey-dark leading-relaxed">{brief.compliance_considerations}</p>
+          }
         </SectionCard>
       )}
 
       <SectionCard title="Success Criteria">
-        <p className="text-sm text-grey-dark leading-relaxed">{brief.success_criteria}</p>
+        {Array.isArray(brief.success_criteria)
+          ? <BulletList items={brief.success_criteria} />
+          : <p className="text-sm text-grey-dark leading-relaxed">{brief.success_criteria}</p>
+        }
       </SectionCard>
     </div>
   )
