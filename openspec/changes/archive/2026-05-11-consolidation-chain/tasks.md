@@ -1,7 +1,7 @@
 ## 1. Database Migration
 
 - [x] 1.1 [SCHEMA MIGRATION] Write Supabase SQL migration to add `structured_brief JSONB`, `last_successful_gate INTEGER DEFAULT 0`, and `error_log JSONB` columns to `engagements` (nullable, no breaking change)
-- [ ] 1.2 Apply migration in Supabase dashboard and verify columns exist
+- [x] 1.2 Apply migration in Supabase dashboard and verify columns exist
 
 ## 2. Consolidation Prompt
 
@@ -53,8 +53,20 @@
 
 ## 8. Smoke Test
 
-- [ ] 8.1 Create a test engagement in Supabase with status `captured` and at least one `engagement_input`
-- [ ] 8.2 POST to `api/pipeline/consolidate` with the engagement ID and a valid session token
-- [ ] 8.3 Verify `engagements.structured_brief` is populated and `status` is `gate1_review`
-- [ ] 8.4 Verify Gate 1 review UI reflects the new status (reads Supabase state, no action needed here)
+- [x] 8.1 Create a test engagement in Supabase with status `captured` and at least one `engagement_input`
+- [x] 8.2 POST to `api/pipeline/consolidate` with the engagement ID and a valid session token
+- [x] 8.3 Verify `engagements.structured_brief` is populated and `status` is `gate1_review`
+- [x] 8.4 Verify Gate 1 review UI reflects the new status (reads Supabase state, no action needed here)
+- [x] 8.5 **[RESOLVED]** Test Approve and Reject buttons on Gate 1 review screen — blocked by missing RLS policies on `gate_approvals` table. Error: `new row violates row-level security policy for table "gate_approvals"`. Fix: run the following in Supabase SQL Editor before retesting:
+  ```sql
+  CREATE POLICY "Users can insert gate approvals for their engagements"
+  ON gate_approvals FOR INSERT TO authenticated
+  WITH CHECK (engagement_id IN (SELECT id FROM engagements WHERE team_member_id = auth.uid()));
+
+  CREATE POLICY "Users can read gate approvals for their engagements"
+  ON gate_approvals FOR SELECT TO authenticated
+  USING (engagement_id IN (SELECT id FROM engagements WHERE team_member_id = auth.uid()));
+  ```
+- [x] 8.6 After RLS fix: test Reject — verify status reverts to `captured` and a `gate_approvals` row exists with `action = rejected`
+- [x] 8.7 After RLS fix: test Approve — verify status advances to `solutions_pending` and a `gate_approvals` row exists with `action = approved`
 <!-- Tasks 8.1–8.4 are manual — require Supabase data and a deployed/local Vercel environment -->
