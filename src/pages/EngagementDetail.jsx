@@ -23,6 +23,7 @@ const STATUS_STEPS = [
   { key: 'captured', label: 'Captured' },
   { key: 'brief_pending', label: 'Generating Brief' },
   { key: 'gate1_review', label: 'Brief Review' },
+  { key: 'solutions_pending', label: 'Generating Solutions' },
   { key: 'gate2_review', label: 'Solutions Review' },
   { key: 'gate3_review', label: 'Proposal Review' },
   { key: 'gate4_review', label: 'Spec Approval' },
@@ -31,8 +32,10 @@ const STATUS_STEPS = [
   { key: 'complete', label: 'Complete' },
 ]
 
-function StatusBar({ status }) {
-  if (status === 'failed') {
+function StatusBar({ status, pipelinePhase }) {
+  const showError = pipelinePhase === 'error' || (pipelinePhase === 'idle' && status === 'failed')
+
+  if (showError) {
     return (
       <div className="bg-red-50 border border-cred text-cred text-sm font-semibold rounded px-4 py-3 mb-8">
         Pipeline error — retry available
@@ -40,9 +43,10 @@ function StatusBar({ status }) {
     )
   }
 
-  const stepIndex = STATUS_STEPS.findIndex(s => s.key === status)
+  const effectiveStatus = pipelinePhase === 'running' ? 'solutions_pending' : status
+  const stepIndex = STATUS_STEPS.findIndex(s => s.key === effectiveStatus)
   const activeIndex = stepIndex === -1 ? 0 : stepIndex
-  const isPending = status === 'brief_pending'
+  const isPending = effectiveStatus === 'brief_pending' || (effectiveStatus === 'solutions_pending' && pipelinePhase === 'running')
 
   return (
     <div className="flex items-center gap-0 mb-8">
@@ -72,8 +76,11 @@ export default function EngagementDetail() {
   const [inputs, setInputs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [pipelinePhase, setPipelinePhase] = useState('idle')
 
   useEffect(() => {
+    let stale = false
+
     async function fetch() {
       try {
         const { data: eng, error: engError } = await supabase
@@ -88,17 +95,21 @@ export default function EngagementDetail() {
           .eq('engagement_id', id)
           .order('created_at', { ascending: true })
         if (inpError) throw inpError
+        if (stale) return
         setEngagement(eng)
         setInputs(inp)
       } catch (err) {
-        setError(err.message)
+        if (!stale) setError(err.message)
       } finally {
-        setLoading(false)
+        if (!stale) setLoading(false)
       }
     }
     fetch()
     const interval = setInterval(fetch, 5000)
-    return () => clearInterval(interval)
+    return () => {
+      stale = true
+      clearInterval(interval)
+    }
   }, [id])
 
   if (loading) return <div className="text-grey-dark text-sm p-8">Loading engagement...</div>
@@ -140,22 +151,110 @@ export default function EngagementDetail() {
         </div>
       </div>
 
-      <StatusBar status={engagement.status} />
+      <StatusBar status={engagement.status} pipelinePhase={pipelinePhase} />
 
-      {engagement.status === 'captured' && (
-        <CaptureSection
-          engagement={engagement}
-          inputs={inputs}
-          onInputAdded={(newInput) => setInputs(prev => [...prev, newInput])}
-          onStatusChange={(newStatus) => setEngagement(prev => ({ ...prev, status: newStatus }))}
-        />
-      )}
+      <StatusSection
+        engagement={engagement}
+        inputs={inputs}
+        onInputAdded={(newInput) => setInputs(prev => [...prev, newInput])}
+        onStatusChange={(newStatus) => setEngagement(prev => ({ ...prev, status: newStatus }))}
+        onPhaseChange={setPipelinePhase}
+      />
+    </div>
+  )
+}
 
-      {engagement.status !== 'captured' && (
-        <div className="bg-white rounded-lg border border-grey-mid p-8 text-center text-grey-dark text-sm">
-          Gate review screens coming soon. Current status: <strong>{engagement.status}</strong>
-        </div>
-      )}
+function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange }) {
+  const { status, last_successful_gate } = engagement
+
+  if (status === 'captured' || (status === 'failed' && last_successful_gate === 0)) {
+    return (
+      <CaptureSection
+        engagement={engagement}
+        inputs={inputs}
+        onInputAdded={onInputAdded}
+        onStatusChange={onStatusChange}
+      />
+    )
+  }
+  if (status === 'solutions_pending' || (status === 'failed' && last_successful_gate === 1)) {
+    return (
+      <SolutionsPendingSection
+        engagement={engagement}
+        onStatusChange={onStatusChange}
+        onPhaseChange={onPhaseChange}
+      />
+    )
+  }
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid p-8 text-center text-grey-dark text-sm">
+      Gate review screens coming soon. Current status: <strong>{status}</strong>
+    </div>
+  )
+}
+
+function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) {
+  const [phase, setPhase] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState(null)
+
+  function updatePhase(newPhase) {
+    setPhase(newPhase)
+    onPhaseChange(newPhase)
+  }
+
+  async function handleGenerateSolutions() {
+    updatePhase('running')
+    setErrorMessage(null)
+    try {
+      const { data, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      const session = data.session
+      const res = await fetch('/api/pipeline/quick-ideas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ engagementId: engagement.id }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Request failed (${res.status})`)
+      }
+      updatePhase('success')
+      setTimeout(() => onStatusChange('gate2_review'), 1500)
+    } catch (err) {
+      updatePhase('error')
+      setErrorMessage(err.message)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid">
+      <div className="p-6">
+        {phase === 'error' && errorMessage && (
+          <div className="bg-red-50 border border-cred text-cred text-sm rounded px-4 py-3 mb-4">
+            {errorMessage}
+          </div>
+        )}
+        <p className="text-sm text-grey-dark">
+          Brief approved. Ready to generate solution options.
+        </p>
+      </div>
+      <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-between">
+        {phase === 'success' ? (
+          <p className="text-sm text-cgreen font-semibold">Solutions generated — review ready</p>
+        ) : (
+          <p className="text-sm text-grey-dark">Ready to generate solutions.</p>
+        )}
+        <button
+          onClick={handleGenerateSolutions}
+          disabled={phase === 'running' || phase === 'success'}
+          className="bg-cgreen text-white px-6 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {phase === 'running' ? 'Generating Solutions...' : 'Generate Solutions →'}
+        </button>
+      </div>
     </div>
   )
 }
