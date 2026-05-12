@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+Defines the behaviour of the consolidation pipeline step — merging all engagement inputs into a structured brief via Claude, enforcing gate pre-conditions server-side, and recovering from failures safely.
+
+## Requirements
 
 ### Requirement: Consolidation chain merges engagement inputs into a structured brief
 The system SHALL provide a `consolidationChain` implemented as a LangChain 0.3.x `RunnableSequence` in `src/lib/chains/consolidation.js`. The chain SHALL accept an engagement context object, format all `engagement_inputs` records by input type, invoke Claude (`claude-sonnet-4-20250514`) via the consolidation prompt, parse the JSON response, and return a structured brief object.

@@ -14,6 +14,13 @@ const STATUS_LABELS = {
   rejected: { label: 'Rejected', color: 'bg-red-100 text-cred' },
 }
 
+function extractErrorMessage(raw) {
+  if (!raw) return 'An error occurred'
+  const matches = [...raw.matchAll(/"message":"([^"]+)"/g)]
+  if (matches.length > 0) return matches[matches.length - 1][1]
+  return raw.length > 80 ? raw.slice(0, 80) + '…' : raw
+}
+
 const MODE_LABELS = {
   quick: { label: 'Quick Ideas', color: 'bg-grey-light text-grey-dark' },
   deep: { label: 'Deep Analysis', color: 'bg-navy text-white' },
@@ -109,7 +116,13 @@ export default function Dashboard() {
           </div>
 
           {engagements.map(eng => {
-            const status = STATUS_LABELS[eng.status] || STATUS_LABELS.captured
+            const status = eng.status === 'failed'
+              ? {
+                  label: `Failed (Gate ${(eng.last_successful_gate ?? 0) + 1})`,
+                  color: 'bg-red-100 text-cred',
+                  tooltip: extractErrorMessage(eng.error_log?.message),
+                }
+              : STATUS_LABELS[eng.status] || STATUS_LABELS.captured
             const mode = eng.analysis_mode ? MODE_LABELS[eng.analysis_mode] : null
             const date = new Date(eng.created_at).toLocaleDateString('en-ZA', {
               day: '2-digit', month: 'short', year: 'numeric'
@@ -128,7 +141,10 @@ export default function Dashboard() {
                   {eng.organisation || '—'}
                 </div>
                 <div className="col-span-2 self-center">
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${status.color}`}>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${status.color}`}
+                    title={status.tooltip}
+                  >
                     {status.label}
                   </span>
                 </div>
