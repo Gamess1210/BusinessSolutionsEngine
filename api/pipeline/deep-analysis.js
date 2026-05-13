@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { quickIdeasChain } from '../../src/lib/chains/quickIdeas.js'
+import { deepAnalysisChain } from '../../src/lib/chains/deepAnalysis.js'
 
 const ALLOWED_STATUSES = ['solutions_pending', 'failed']
 
@@ -30,8 +30,8 @@ async function getEngagement(supabaseAdmin, engagementId, userId) {
 
 function validateEngagement(engagement) {
   if (!engagement) return { code: 404, error: 'Engagement not found' }
-  if (engagement.analysis_mode === 'deep') {
-    return { code: 409, error: 'Engagement is not a quick ideas engagement' }
+  if (engagement.analysis_mode !== 'deep') {
+    return { code: 409, error: 'Engagement is not a deep analysis engagement' }
   }
   if (!ALLOWED_STATUSES.includes(engagement.status)) {
     return {
@@ -49,7 +49,7 @@ function validateEngagement(engagement) {
 function buildErrorLog(error) {
   return {
     message: error.message,
-    chain: 'quickIdeasChain',
+    chain: 'deepAnalysisChain',
     timestamp: new Date().toISOString(),
   }
 }
@@ -63,7 +63,7 @@ async function recoverFromError(supabaseAdmin, engagementId, error) {
       error_log: buildErrorLog(error),
     })
     .eq('id', engagementId)
-  console.error(`[BSE] Quick ideas failed for engagement ${engagementId}:`, error.message)
+  console.error(`[BSE] Deep analysis failed for engagement ${engagementId}:`, error.message)
 }
 
 export default async function handler(req, res) {
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
   if (validationError) return res.status(validationError.code).json(validationError)
 
   try {
-    const solutions = await quickIdeasChain.invoke({
+    const solutions = await deepAnalysisChain.invoke({
       structured_brief: engagement.structured_brief,
       industry: engagement.industry,
     })

@@ -197,6 +197,11 @@ function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) 
   const [phase, setPhase] = useState('idle')
   const [errorMessage, setErrorMessage] = useState(null)
 
+  const isDeep = engagement.analysis_mode === 'deep'
+  const endpoint = isDeep ? '/api/pipeline/deep-analysis' : '/api/pipeline/quick-ideas'
+  const idleLabel = isDeep ? 'Run Deep Analysis →' : 'Run Quick Ideas →'
+  const loadingLabel = isDeep ? 'Running Deep Analysis...' : 'Running Quick Ideas...'
+
   function updatePhase(newPhase) {
     setPhase(newPhase)
     onPhaseChange(newPhase)
@@ -209,7 +214,7 @@ function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) 
       const { data, error: sessionError } = await supabase.auth.getSession()
       if (sessionError) throw sessionError
       const session = data.session
-      const res = await fetch('/api/pipeline/quick-ideas', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +257,7 @@ function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) 
           disabled={phase === 'running' || phase === 'success'}
           className="bg-cgreen text-white px-6 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {phase === 'running' ? 'Generating Solutions...' : 'Generate Solutions →'}
+          {phase === 'running' ? loadingLabel : idleLabel}
         </button>
       </div>
     </div>
