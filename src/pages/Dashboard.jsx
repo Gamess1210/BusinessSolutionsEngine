@@ -8,6 +8,7 @@ const STATUS_LABELS = {
   gate1_review: { label: 'Gate 1 Review', color: 'bg-yellow-100 text-yellow-700' },
   solutions_pending: { label: 'Solutions Pending', color: 'bg-blue-100 text-cblue' },
   gate2_review: { label: 'Gate 2 Review', color: 'bg-yellow-100 text-yellow-700' },
+  proposal_pending: { label: 'Proposal Pending', color: 'bg-blue-100 text-cblue' },
   output_pending: { label: 'Output Pending', color: 'bg-blue-100 text-cblue' },
   gate3_review: { label: 'Gate 3 Review', color: 'bg-yellow-100 text-yellow-700' },
   complete: { label: 'Complete', color: 'bg-green-100 text-cgreen' },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const GUIDED_QUESTIONS = [
@@ -25,6 +25,7 @@ const STATUS_STEPS = [
   { key: 'gate1_review', label: 'Brief Review' },
   { key: 'solutions_pending', label: 'Generating Solutions' },
   { key: 'gate2_review', label: 'Solutions Review' },
+  { key: 'proposal_pending', label: 'Proposal Pending' },
   { key: 'gate3_review', label: 'Proposal Review' },
   { key: 'gate4_review', label: 'Spec Approval' },
   { key: 'gate5_review', label: 'Code Review' },
@@ -35,6 +36,11 @@ const STATUS_STEPS = [
 function StatusBar({ status, pipelinePhase }) {
   const showError = pipelinePhase === 'error' || (pipelinePhase === 'idle' && status === 'failed')
 
+  const effectiveStatus = pipelinePhase === 'running' ? 'solutions_pending' : status
+  const stepIndex = STATUS_STEPS.findIndex(s => s.key === effectiveStatus)
+  const activeIndex = stepIndex === -1 ? 0 : stepIndex
+  const isPending = effectiveStatus === 'brief_pending' || (effectiveStatus === 'solutions_pending' && pipelinePhase === 'running')
+
   if (showError) {
     return (
       <div className="bg-red-50 border border-cred text-cred text-sm font-semibold rounded px-4 py-3 mb-8">
@@ -43,28 +49,39 @@ function StatusBar({ status, pipelinePhase }) {
     )
   }
 
-  const effectiveStatus = pipelinePhase === 'running' ? 'solutions_pending' : status
-  const stepIndex = STATUS_STEPS.findIndex(s => s.key === effectiveStatus)
-  const activeIndex = stepIndex === -1 ? 0 : stepIndex
-  const isPending = effectiveStatus === 'brief_pending' || (effectiveStatus === 'solutions_pending' && pipelinePhase === 'running')
-
   return (
-    <div className="flex items-center gap-0 mb-8">
-      {STATUS_STEPS.map((step, i) => (
-        <div key={step.key} className="flex items-center">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-            i < activeIndex ? 'bg-cgreen text-white' :
-            i === activeIndex ? `bg-navy text-white${isPending ? ' animate-pulse' : ''}` :
-            'bg-grey-mid text-grey-dark'
-          }`}>
-            {i < activeIndex && <span>✓</span>}
-            {step.label}
-          </div>
-          {i < STATUS_STEPS.length - 1 && (
-            <div className={`h-0.5 w-6 ${i < activeIndex ? 'bg-cgreen' : 'bg-grey-mid'}`} />
-          )}
-        </div>
-      ))}
+    <div className="overflow-x-auto mb-8">
+      <div className="flex items-center justify-center min-w-max mx-auto">
+        {STATUS_STEPS.map((step, i) => {
+          const isCompleted = i < activeIndex
+          const isActive = i === activeIndex
+          return (
+            <div key={step.key} className="flex items-center flex-shrink-0">
+              {isActive ? (
+                <div
+                  className={`h-8 px-3 flex items-center rounded text-sm font-semibold bg-navy text-white${isPending ? ' animate-pulse' : ''}`}
+                >
+                  {step.label}
+                </div>
+              ) : (
+                <div
+                  title={step.label}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                    isCompleted ? 'bg-cgreen text-white' : 'border-2 border-grey-mid text-grey-mid'
+                  }`}
+                >
+                  {isCompleted ? '✓' : i + 1}
+                </div>
+              )}
+              {i < STATUS_STEPS.length - 1 && (
+                <div className={`h-0.5 w-6 flex-shrink-0 ${
+                  i + 1 < activeIndex ? 'bg-cgreen' : 'bg-gray-300'
+                }`} />
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -186,9 +203,32 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
       />
     )
   }
+  if (status === 'gate2_review') {
+    return <Gate2ReviewSection engagementId={engagement.id} />
+  }
   return (
     <div className="bg-white rounded-lg border border-grey-mid p-8 text-center text-grey-dark text-sm">
       Gate review screens coming soon. Current status: <strong>{status}</strong>
+    </div>
+  )
+}
+
+function Gate2ReviewSection({ engagementId }) {
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid">
+      <div className="p-6">
+        <p className="text-sm text-grey-dark">
+          Solutions generated and ready for review.
+        </p>
+      </div>
+      <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-end">
+        <Link
+          to={`/review/${engagementId}/solutions`}
+          className="bg-navy text-white px-6 py-2 rounded font-semibold text-sm hover:bg-navy-light transition-colors"
+        >
+          Review Solutions →
+        </Link>
+      </div>
     </div>
   )
 }
