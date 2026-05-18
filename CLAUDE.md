@@ -148,13 +148,14 @@ Chains to implement (in order):
 ### Gate Enforcement
 - Gate state is always verified server-side in Vercel API routes (`/api/pipeline/...`)
 - Frontend never controls pipeline progression — it only reflects state from Supabase
-- Six mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
+- Seven mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
   - Gate 1: Brief Review
-  - Gate 2: Solutions Review  
+  - Gate 2: Solutions Review
   - Gate 3: Business Proposal (client-facing PDF, sent from app to client_email)
-  - Gate 4: Spec Approval (OpenSpec files committed to client repo)
-  - Gate 5: Code Review (Gemini scorecard + ESLint CC scores per file)
-  - Gate 6: Output Review (final client documents)
+  - Gate 4: Client Decision and Context (BA selects chosen solution; optional supplementary context)
+  - Gate 5: Spec Approval (OpenSpec files committed to client repo)
+  - Gate 6: Code Review (Gemini scorecard + ESLint CC scores per file)
+  - Gate 7: Output Review (final client documents)
 
 ### ESLint Complexity — Pre-check Behaviour
 - CC 1–10: pass

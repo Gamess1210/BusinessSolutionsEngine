@@ -10,7 +10,11 @@
       "Bash(openspec instructions *)",
       "Bash(openspec validate *)",
       "Bash(npm ls *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\\\\specs\" | Where-Object { !$_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell(cmd /c \"dir /a /s C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\\\\specs\")"
     ]
   }
 }

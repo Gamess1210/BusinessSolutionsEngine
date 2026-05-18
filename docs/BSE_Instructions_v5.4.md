@@ -644,7 +644,7 @@ When Gemini scores below threshold:
 
 On any chain failure:
 1. `engagement.status` → `'failed'`
-2. `engagement.last_successful_gate` is set to the last gate number with an approved `gate_approvals` record
+2. `engagement.last_successful_gate` is set to the last gate number with an approved `gate_approvals` record. Exception: during contextual re-injection regeneration at `gate2_review`, `last_successful_gate` is set to `2` regardless of whether a Gate 2 approval record exists — this correctly signals that Gate 1 is complete and the BA should retry regeneration, not restart from capture.
 3. Error details stored in `engagement.error_log` (JSONB)
 4. BA notified via Teams with engagement link and error summary
 5. BA retries from the dashboard — pipeline resumes from `last_successful_gate`
@@ -787,6 +787,7 @@ approved_at     timestamptz default now()
 action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
+                  'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
                   'cc_pause_approved',             -- Gate 6: BA approved continuation after CC 21+
                   'cc_pause_rejected',             -- Gate 6: BA rejected for refactor after CC 21+
                   'manual_override'                -- Gate 7: BA confirmed manual upload after 2 failed retries [v5.2]
