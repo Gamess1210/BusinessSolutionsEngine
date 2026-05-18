@@ -1,8 +1,8 @@
-# Business Solutions Engine (BSE) — Full Project Instructions v5.2
+# Business Solutions Engine (BSE) — Full Project Instructions v5.3
 
-**How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0, v5.1) and all prior pipeline planning notes.
+**How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0, v5.1, v5.2) and all prior pipeline planning notes.
 
-**What changed from v5.1** Two additions were made following the post-v5.1 build session. Affected sections are marked [v5.2 CHANGE]. All other sections are identical to v5.1. See the change log at the end of this document for a full summary.
+**What changed from v5.2** Section 15 updated to reflect Phase 3 partial completion. Affected sections are marked [v5.3 CHANGE]. All other sections are identical to v5.2. See the change log at the end of this document for a full summary.
 
 ---
 
@@ -1331,8 +1331,9 @@ FALLOW_GATE_MIN_VERSION=2.46.0        # Minimum Fallow version for uncommitted-c
 
 ## 15. Build Sequence
 
-### Current State (Phases 1 & 2 Complete)
+### Current State (Phases 1 & 2 Complete, Phase 3 Partially Complete) [v5.3 CHANGE]
 
+**Phases 1 & 2:**
 - React + Vite + Tailwind scaffold ✅
 - Vercel deployment ✅
 - Supabase schema (original 4 tables) + RLS ✅
@@ -1346,6 +1347,17 @@ FALLOW_GATE_MIN_VERSION=2.46.0        # Minimum Fallow version for uncommitted-c
 - Client Intake Form (public, token-protected) ✅
 - Intake token generation ✅
 - Input review (expandable Q&A) ✅
+
+**Phase 3 — completed so far:** [v5.3 CHANGE]
+- LangChain installed and pinned (`langchain@^0.3.0`, `@langchain/anthropic@^0.3.0`, `@langchain/google-genai@^0.3.0`) ✅
+- `consolidationChain` implemented (`src/lib/chains/consolidation.js`) ✅
+- `quickIdeasChain` implemented (`src/lib/chains/quickIdeas.js`) ✅
+- `deepAnalysisChain` implemented — two-call RunnableSequence: Call 1 (Prompt 10.3 → deep brief), Call 2 (Prompt 10.4 → 5 solutions) (`src/lib/chains/deepAnalysis.js`) ✅
+- Gate 1 review screen (`/review/:id/brief`) ✅
+- Gate 2 review screen (`/review/:id/solutions`) — mode-aware (Quick: 3 cards / Deep: 5 cards), inline editing, approve/reject ✅
+- API routes: `api/pipeline/consolidate.js`, `api/pipeline/quick-ideas.js`, `api/pipeline/deep-analysis.js`, `api/pipeline/gate2-approve.js` ✅
+- `proposal_pending` status wired into Dashboard, EngagementDetail status stepper, and Supabase ✅
+- `analysis_mode` routing: deep engagements → `/api/pipeline/deep-analysis`; quick → `/api/pipeline/quick-ideas`; mutual exclusion enforced server-side ✅
 
 ### Phase 3 — LangChain + AI Pipeline
 
@@ -1735,8 +1747,17 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 
 ---
 
-*Document version: 5.2*
+## v5.3 Change Log
+
+| # | Section affected | Change | Type |
+|---|---|---|---|
+| 1 | 15 | Current State heading updated to reflect Phase 3 partial completion. | Progress update |
+| 2 | 15 | Phase 3 completed items listed with ✅: LangChain install, `consolidationChain`, `quickIdeasChain`, `deepAnalysisChain`, Gate 1 and Gate 2 review screens, four API pipeline routes, `proposal_pending` status wiring, `analysis_mode` routing with server-side mutual exclusion. | Progress update |
+
+---
+
+*Document version: 5.3*
 *Produced by: Comotion Business Solutions — Planning & Architecture*
-*Project Date: 2026-05-09*
-*Supersedes: v1.0, v2.0, v3.0, v4.0, v5.0, v5.1 and all pipeline planning notes*
+*Project Date: 2026-05-18*
+*Supersedes: v1.0, v2.0, v3.0, v4.0, v5.0, v5.1, v5.2 and all pipeline planning notes*
 *Build environment: VSCode + Claude Code*

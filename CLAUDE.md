@@ -75,10 +75,14 @@ RLS: users see only their own engagements (`team_member_id = auth.uid()`). Intak
 ```
 src/
   pages/          # Login, Dashboard, NewEngagement, EngagementDetail, IntakeForm
+  pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2)
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
+  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis
+  lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
   App.jsx         # Routes + ProtectedRoute
+api/pipeline/     # Vercel serverless routes: consolidate, quick-ideas, deep-analysis, gate2-approve
 openspec/         # Spec-driven workflow config and change tracking
 ```
 
