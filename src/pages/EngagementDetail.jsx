@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import SupplementaryContextBanner from '../components/SupplementaryContextBanner'
 
 const GUIDED_QUESTIONS = [
   { section: 'A — Context', q: 'Who is the client, and which organisation and department are we working with?' },
@@ -94,6 +95,7 @@ export default function EngagementDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pipelinePhase, setPipelinePhase] = useState('idle')
+  const [refetchKey, setRefetchKey] = useState(0)
 
   useEffect(() => {
     let stale = false
@@ -127,7 +129,7 @@ export default function EngagementDetail() {
       stale = true
       clearInterval(interval)
     }
-  }, [id])
+  }, [id, refetchKey])
 
   if (loading) return <div className="text-grey-dark text-sm p-8">Loading engagement...</div>
   if (error) return <div className="bg-red-50 border border-cred text-cred text-sm rounded px-4 py-3">{error}</div>
@@ -176,12 +178,13 @@ export default function EngagementDetail() {
         onInputAdded={(newInput) => setInputs(prev => [...prev, newInput])}
         onStatusChange={(newStatus) => setEngagement(prev => ({ ...prev, status: newStatus }))}
         onPhaseChange={setPipelinePhase}
+        onRefetch={() => setRefetchKey(k => k + 1)}
       />
     </div>
   )
 }
 
-function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange }) {
+function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch }) {
   const { status, last_successful_gate } = engagement
 
   if (status === 'captured' || (status === 'failed' && last_successful_gate === 0)) {
@@ -204,7 +207,14 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
     )
   }
   if (status === 'gate2_review') {
-    return <Gate2ReviewSection engagementId={engagement.id} />
+    return (
+      <Gate2ReviewSection
+        engagement={engagement}
+        inputs={inputs}
+        onInputAdded={onInputAdded}
+        onRefetch={onRefetch}
+      />
+    )
   }
   return (
     <div className="bg-white rounded-lg border border-grey-mid p-8 text-center text-grey-dark text-sm">
@@ -213,21 +223,69 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
   )
 }
 
-function Gate2ReviewSection({ engagementId }) {
+function Gate2ReviewSection({ engagement, inputs, onInputAdded, onRefetch }) {
+  const [hasPendingSupplementaryInput, setHasPendingSupplementaryInput] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
+
+  function handleInputAdded(newInput) {
+    onInputAdded(newInput)
+    setHasPendingSupplementaryInput(true)
+  }
+
+  function handleRegenerateComplete() {
+    setIsRegenerating(false)
+    setHasPendingSupplementaryInput(false)
+    setDismissed(false)
+    onRefetch()
+  }
+
+  function handleDismiss() {
+    setDismissed(true)
+  }
+
+  function handleRegeneratingChange(value) {
+    setIsRegenerating(value)
+  }
+
+  const showBanner = hasPendingSupplementaryInput && !dismissed
+
   return (
-    <div className="bg-white rounded-lg border border-grey-mid">
-      <div className="p-6">
-        <p className="text-sm text-grey-dark">
-          Solutions generated and ready for review.
-        </p>
+    <div>
+      <div className="bg-white rounded-lg border border-grey-mid mb-4">
+        <div className="p-6">
+          <p className="text-sm text-grey-dark">
+            Solutions generated and ready for review.
+          </p>
+        </div>
+        <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-end">
+          <Link
+            to={`/review/${engagement.id}/solutions`}
+            className="bg-navy text-white px-6 py-2 rounded font-semibold text-sm hover:bg-navy-light transition-colors"
+          >
+            Review Solutions →
+          </Link>
+        </div>
       </div>
-      <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-end">
-        <Link
-          to={`/review/${engagementId}/solutions`}
-          className="bg-navy text-white px-6 py-2 rounded font-semibold text-sm hover:bg-navy-light transition-colors"
-        >
-          Review Solutions →
-        </Link>
+
+      {showBanner && (
+        <SupplementaryContextBanner
+          engagementId={engagement.id}
+          analysisMode={engagement.analysis_mode}
+          onRegenerateComplete={handleRegenerateComplete}
+          onDismiss={handleDismiss}
+          onRegeneratingChange={handleRegeneratingChange}
+        />
+      )}
+
+      <div className={isRegenerating ? 'pointer-events-none opacity-50' : undefined}>
+        <CaptureSection
+          engagement={engagement}
+          inputs={inputs}
+          onInputAdded={handleInputAdded}
+          onStatusChange={() => {}}
+          mode="supplementary"
+        />
       </div>
     </div>
   )
@@ -304,7 +362,7 @@ function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) 
   )
 }
 
-function CaptureSection({ engagement, inputs, onInputAdded, onStatusChange }) {
+function CaptureSection({ engagement, inputs, onInputAdded, onStatusChange, mode }) {
   const [activeTab, setActiveTab] = useState('braindump')
   const [error, setError] = useState(null)
   const [pipelineRunning, setPipelineRunning] = useState(false)
@@ -405,7 +463,7 @@ function CaptureSection({ engagement, inputs, onInputAdded, onStatusChange }) {
       )}
       
 
-      {inputs.length > 0 && (
+      {inputs.length > 0 && mode !== 'supplementary' && (
         <PipelineFooter onRun={handleRunPipeline} running={pipelineRunning} success={success} />
       )}
     </div>

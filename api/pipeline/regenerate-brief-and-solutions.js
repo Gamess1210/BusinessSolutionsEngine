@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { consolidationChain } from '../../src/lib/chains/consolidation.js'
+import { quickIdeasChain } from '../../src/lib/chains/quickIdeas.js'
 import { deepAnalysisChain } from '../../src/lib/chains/deepAnalysis.js'
-
-const ALLOWED_STATUSES = ['solutions_pending', 'failed', 'gate2_review']
 
 function createAdminClient() {
   return createClient(
@@ -21,7 +21,7 @@ async function getAuthenticatedUser(supabaseAdmin, req) {
 async function getEngagement(supabaseAdmin, engagementId, userId) {
   const { data } = await supabaseAdmin
     .from('engagements')
-    .select('id, status, industry, analysis_mode, structured_brief, team_member_id')
+    .select('id, status, industry, analysis_mode, team_member_id')
     .eq('id', engagementId)
     .eq('team_member_id', userId)
     .single()
@@ -30,18 +30,8 @@ async function getEngagement(supabaseAdmin, engagementId, userId) {
 
 function validateEngagement(engagement) {
   if (!engagement) return { code: 404, error: 'Engagement not found' }
-  if (engagement.analysis_mode !== 'deep') {
-    return { code: 409, error: 'Engagement is not a deep analysis engagement' }
-  }
-  if (!ALLOWED_STATUSES.includes(engagement.status)) {
-    return {
-      code: 409,
-      error: 'Engagement is not ready for solution generation',
-      status: engagement.status,
-    }
-  }
-  if (!engagement.structured_brief) {
-    return { code: 422, error: 'No approved brief found for this engagement' }
+  if (engagement.status !== 'gate2_review') {
+    return { code: 409, error: 'Engagement is not at gate2_review status' }
   }
   return null
 }
@@ -49,7 +39,7 @@ function validateEngagement(engagement) {
 function buildErrorLog(error) {
   return {
     message: error.message,
-    chain: 'deepAnalysisChain',
+    chain: 'regenerationChain',
     timestamp: new Date().toISOString(),
   }
 }
@@ -59,11 +49,48 @@ async function recoverFromError(supabaseAdmin, engagementId, error) {
     .from('engagements')
     .update({
       status: 'failed',
-      last_successful_gate: 1,
+      last_successful_gate: 2,
       error_log: buildErrorLog(error),
     })
     .eq('id', engagementId)
-  console.error(`[BSE] Deep analysis failed for engagement ${engagementId}:`, error.message)
+  console.error(`[BSE] Regeneration failed for engagement ${engagementId}:`, error.message)
+}
+
+async function voidGate2Approval(supabaseAdmin, engagementId) {
+  await supabaseAdmin
+    .from('gate_approvals')
+    .update({ action: 'voided' })
+    .eq('engagement_id', engagementId)
+    .eq('gate_number', 2)
+}
+
+async function runConsolidation(supabaseAdmin, engagementId, industry) {
+  const { data: inputs } = await supabaseAdmin
+    .from('engagement_inputs')
+    .select('*')
+    .eq('engagement_id', engagementId)
+
+  const brief = await consolidationChain.invoke({ inputs: inputs ?? [], industry })
+
+  await supabaseAdmin
+    .from('engagements')
+    .update({ structured_brief: brief, error_log: null })
+    .eq('id', engagementId)
+
+  return brief
+}
+
+async function runSolutionsChain(supabaseAdmin, engagement, brief) {
+  const chain = engagement.analysis_mode === 'deep' ? deepAnalysisChain : quickIdeasChain
+  const solutions = await chain.invoke({
+    structured_brief: brief,
+    industry: engagement.industry,
+  })
+
+  await supabaseAdmin
+    .from('engagements')
+    .update({ solutions })
+    .eq('id', engagement.id)
 }
 
 export default async function handler(req, res) {
@@ -86,22 +113,12 @@ export default async function handler(req, res) {
   if (validationError) return res.status(validationError.code).json(validationError)
 
   try {
-    const solutions = await deepAnalysisChain.invoke({
-      structured_brief: engagement.structured_brief,
-      industry: engagement.industry,
-    })
-
-    const updateFields = { solutions, error_log: null }
-    if (engagement.status !== 'gate2_review') updateFields.status = 'gate2_review'
-
-    await supabaseAdmin
-      .from('engagements')
-      .update(updateFields)
-      .eq('id', engagementId)
-
+    await voidGate2Approval(supabaseAdmin, engagementId)
+    const brief = await runConsolidation(supabaseAdmin, engagementId, engagement.industry)
+    await runSolutionsChain(supabaseAdmin, engagement, brief)
     return res.status(200).json({ success: true, engagementId })
   } catch (error) {
     await recoverFromError(supabaseAdmin, engagementId, error)
-    return res.status(500).json({ error: 'Solution generation failed', engagementId })
+    return res.status(500).json({ error: 'Regeneration failed', engagementId })
   }
 }

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { consolidationChain, formatEngagementInputs } from '../../src/lib/chains/consolidation.js'
 
-const CONSOLIDATABLE_STATUSES = ['captured', 'failed']
+const CONSOLIDATABLE_STATUSES = ['captured', 'failed', 'gate2_review']
 const DEFAULT_MAX_CHARS = 40_000
 
 function createAdminClient() {
@@ -35,6 +35,15 @@ async function getEngagementInputs(supabaseAdmin, engagementId) {
     .select('*')
     .eq('engagement_id', engagementId)
   return data ?? []
+}
+
+async function writeBriefResult(supabaseAdmin, engagementId, brief, isRegeneration) {
+  const updateFields = { structured_brief: brief, error_log: null }
+  if (!isRegeneration) updateFields.status = 'gate1_review'
+  await supabaseAdmin
+    .from('engagements')
+    .update(updateFields)
+    .eq('id', engagementId)
 }
 
 function buildErrorLog(error) {
@@ -101,10 +110,14 @@ export default async function handler(req, res) {
     return res.status(422).json({ error: 'Input too large for consolidation' })
   }
 
-  await supabaseAdmin
-    .from('engagements')
-    .update({ status: 'brief_pending' })
-    .eq('id', engagementId)
+  const isRegeneration = engagement.status === 'gate2_review'
+
+  if (!isRegeneration) {
+    await supabaseAdmin
+      .from('engagements')
+      .update({ status: 'brief_pending' })
+      .eq('id', engagementId)
+  }
 
   try {
     const brief = await consolidationChain.invoke({
@@ -112,10 +125,7 @@ export default async function handler(req, res) {
       industry: engagement.industry,
     })
 
-    await supabaseAdmin
-      .from('engagements')
-      .update({ structured_brief: brief, status: 'gate1_review', error_log: null })
-      .eq('id', engagementId)
+    await writeBriefResult(supabaseAdmin, engagementId, brief, isRegeneration)
 
     return res.status(200).json({ success: true, engagementId })
   } catch (error) {

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { quickIdeasChain } from '../../src/lib/chains/quickIdeas.js'
 
-const ALLOWED_STATUSES = ['solutions_pending', 'failed']
+const ALLOWED_STATUSES = ['solutions_pending', 'failed', 'gate2_review']
 
 function createAdminClient() {
   return createClient(
@@ -91,9 +91,12 @@ export default async function handler(req, res) {
       industry: engagement.industry,
     })
 
+    const updateFields = { solutions, error_log: null }
+    if (engagement.status !== 'gate2_review') updateFields.status = 'gate2_review'
+
     await supabaseAdmin
       .from('engagements')
-      .update({ solutions, status: 'gate2_review', error_log: null })
+      .update(updateFields)
       .eq('id', engagementId)
 
     return res.status(200).json({ success: true, engagementId })
