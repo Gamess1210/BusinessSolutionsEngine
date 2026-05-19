@@ -11,6 +11,7 @@ const STATUS_LABELS = {
   proposal_pending: { label: 'Proposal Pending', color: 'bg-blue-100 text-cblue' },
   output_pending: { label: 'Output Pending', color: 'bg-blue-100 text-cblue' },
   gate3_review: { label: 'Gate 3 Review', color: 'bg-yellow-100 text-yellow-700' },
+  gate4_review: { label: 'Gate 4 Review', color: 'bg-yellow-100 text-yellow-700' },
   complete: { label: 'Complete', color: 'bg-green-100 text-cgreen' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-cred' },
 }

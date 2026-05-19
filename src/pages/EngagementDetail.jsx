@@ -292,6 +292,14 @@ export default function EngagementDetail() {
       {engagement.sharepoint_solution_options_url && (
         <DocumentASection url={engagement.sharepoint_solution_options_url} />
       )}
+
+      {engagement.sharepoint_proposal_url && (
+        <DocumentBSection
+          url={engagement.sharepoint_proposal_url}
+          engagementId={engagement.id}
+          status={engagement.status}
+        />
+      )}
     </div>
   )
 }
@@ -315,6 +323,71 @@ function DocumentASection({ url }) {
       >
         Open in SharePoint →
       </a>
+    </div>
+  )
+}
+
+function DocumentBSection({ url, engagementId, status }) {
+  const [sendState, setSendState] = useState('idle')
+  const [sendError, setSendError] = useState(null)
+  const filename = url.split('/').pop()?.split('?')[0] ?? 'BusinessProposal.pdf'
+
+  async function handleSend() {
+    setSendState('loading')
+    setSendError(null)
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData.session?.access_token
+      const res = await fetch('/api/pipeline/gate3-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ engagementId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`)
+      setSendState('sent')
+    } catch (err) {
+      setSendError(err.message)
+      setSendState('idle')
+    }
+  }
+
+  return (
+    <div className="mt-4 bg-white rounded-lg border border-grey-mid p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-8 rounded bg-cgreen/10 text-cgreen flex items-center justify-center text-sm font-bold flex-shrink-0">B</span>
+          <div>
+            <p className="text-sm font-semibold text-navy">Business Proposal</p>
+            <p className="text-xs text-grey-dark mt-0.5">{decodeURIComponent(filename)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-navy hover:underline"
+          >
+            Open in SharePoint →
+          </a>
+          {status === 'gate4_review' && sendState !== 'sent' && (
+            <button
+              onClick={handleSend}
+              disabled={sendState === 'loading'}
+              className="bg-navy text-white px-4 py-1.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {sendState === 'loading' ? 'Sending…' : 'Send to Client'}
+            </button>
+          )}
+          {sendState === 'sent' && (
+            <span className="text-sm font-semibold text-cgreen">Sent ✓</span>
+          )}
+        </div>
+      </div>
+      {sendError && (
+        <p className="text-xs text-cred mt-2">{sendError}</p>
+      )}
     </div>
   )
 }
