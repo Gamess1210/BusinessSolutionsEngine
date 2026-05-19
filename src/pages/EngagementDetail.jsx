@@ -288,6 +288,33 @@ export default function EngagementDetail() {
         onPhaseChange={setPipelinePhase}
         onRefetch={() => setRefetchKey(k => k + 1)}
       />
+
+      {engagement.sharepoint_solution_options_url && (
+        <DocumentASection url={engagement.sharepoint_solution_options_url} />
+      )}
+    </div>
+  )
+}
+
+function DocumentASection({ url }) {
+  const filename = url.split('/').pop()?.split('?')[0] ?? 'SolutionOptions.pdf'
+  return (
+    <div className="mt-4 bg-white rounded-lg border border-grey-mid p-4 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <span className="w-8 h-8 rounded bg-cblue/10 text-cblue flex items-center justify-center text-sm font-bold flex-shrink-0">A</span>
+        <div>
+          <p className="text-sm font-semibold text-navy">Solution Options Summary</p>
+          <p className="text-xs text-grey-dark mt-0.5">{decodeURIComponent(filename)}</p>
+        </div>
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm font-medium text-navy hover:underline flex items-center gap-1"
+      >
+        Open in SharePoint →
+      </a>
     </div>
   )
 }

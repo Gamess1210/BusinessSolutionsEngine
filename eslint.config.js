@@ -32,4 +32,11 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  {
+    // Server-side-only lib helpers (no browser runtime)
+    files: ['src/lib/sharepoint.js', 'src/lib/generatePdf.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

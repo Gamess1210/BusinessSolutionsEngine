@@ -173,7 +173,7 @@ function ActionFooter({ onApprove, onReject, actionLoading, error }) {
           disabled={!!actionLoading}
           className="bg-cgreen text-white px-6 py-2 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {actionLoading === 'approved' ? 'Approving...' : 'Approve Solutions'}
+          {actionLoading === 'approved' ? 'Generating Document A…' : 'Approve Solutions'}
         </button>
       </div>
     </div>

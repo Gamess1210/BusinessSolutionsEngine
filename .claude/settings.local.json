@@ -14,7 +14,12 @@
       "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\")",
       "Bash(Select-Object FullName)",
       "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\\\\specs\" | Where-Object { !$_.PSIsContainer } | Select-Object FullName)",
-      "PowerShell(cmd /c \"dir /a /s C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\\\\specs\")"
+      "PowerShell(cmd /c \"dir /a /s C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\changes\\\\contextual-reinjection\\\\specs\")",
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate3-proposal-screen\")",
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/proposal-generation-chain\")",
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/proposal-edit-chain\")",
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate3-api-routes\")",
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate2-solutions-review\")"
     ]
   }
 }
