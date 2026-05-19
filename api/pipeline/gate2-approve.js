@@ -81,14 +81,22 @@ async function handleRejected(supabaseAdmin, engagementId) {
   if (statusError) throw statusError
 }
 
+function isSharePointConfigured() {
+  const vars = ['MICROSOFT_TENANT_ID', 'MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET', 'SHAREPOINT_SITE_ID', 'SHAREPOINT_DRIVE_ID']
+  return vars.every(v => process.env[v])
+}
+
 async function generateDocumentA(engagement) {
   const docAJson = await documentAGenerationChain.invoke({ engagement })
   const html = renderDocumentAHtml(docAJson)
   const pdfBuffer = await generatePdf(html)
+  if (!isSharePointConfigured()) {
+    console.warn('[BSE] SharePoint upload skipped — Microsoft credentials not configured')
+    return null
+  }
   const date = new Date().toISOString().slice(0, 10)
   const filename = `${(engagement.client_name ?? 'Unknown').replace(/[^a-zA-Z0-9_-]/g, '_')}_${date}_SolutionOptions.pdf`
-  const url = await uploadToSharePoint({ buffer: pdfBuffer, filename, clientName: engagement.client_name, date })
-  return url
+  return uploadToSharePoint({ buffer: pdfBuffer, filename, clientName: engagement.client_name, date })
 }
 
 async function finalizeDocumentA(supabaseAdmin, engagementId, url) {

@@ -36,9 +36,18 @@ async function updateProposalJson(supabaseAdmin, engagementId, proposalJson) {
   if (error) throw error
 }
 
+function isSharePointConfigured() {
+  const vars = ['MICROSOFT_TENANT_ID', 'MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET', 'SHAREPOINT_SITE_ID', 'SHAREPOINT_DRIVE_ID']
+  return vars.every(v => process.env[v])
+}
+
 async function generateAndUpload(engagement, proposalJson) {
   const html = renderProposalHtml(proposalJson)
   const pdfBuffer = await generatePdf(html)
+  if (!isSharePointConfigured()) {
+    console.warn('[BSE] SharePoint upload skipped — Microsoft credentials not configured')
+    return null
+  }
   const date = new Date().toISOString().slice(0, 10)
   const safeName = (engagement.client_name ?? 'Unknown').replace(/[^a-zA-Z0-9_-]/g, '_')
   const filename = `${safeName}_${date}_BusinessProposal.pdf`
