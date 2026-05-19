@@ -6,7 +6,7 @@ Refer to this before writing any database query.
 
 ---
 
-## Table: engagements [v5.1 CHANGE]
+## Table: engagements [v5.4 CHANGE]
 
 ```sql
 id                    uuid primary key default gen_random_uuid()
@@ -23,15 +23,18 @@ status                text default 'captured' check (status in (
                         'captured', 'brief_pending', 'gate1_review',
                         'solutions_pending', 'gate2_review',
                         'proposal_pending', 'gate3_review',
-                        'spec_pending', 'gate4_review',
-                        'code_pending', 'code_review', 'gate5_review',
-                        'output_pending', 'gate6_review', 'complete',
+                        'gate4_review',
+                        'spec_pending', 'gate5_review',
+                        'code_pending', 'code_review', 'gate6_review',
+                        'output_pending', 'gate7_review', 'complete',
                         'rejected', 'failed'
                       ))
 last_successful_gate  int                -- set on failure; used for retry
 error_log             jsonb              -- populated on failure; cleared on retry
 structured_brief      jsonb
 solutions             jsonb
+chosen_solution       jsonb              -- the selected solution object from Gate 4 [v5.4]
+gate4_no_further_input boolean default false  -- true if BA confirmed no additional context [v5.4]
 sharepoint_proposal_url text             -- business proposal PDF [v5.1]
 sharepoint_brief_url  text
 sharepoint_deck_url   text
@@ -65,26 +68,27 @@ created_at      timestamptz default now()
 
 ---
 
-## Table: gate_approvals [v5.1 CHANGE]
+## Table: gate_approvals [v5.4 CHANGE]
 
 ```sql
 id              uuid primary key default gen_random_uuid()
 engagement_id   uuid references engagements(id) on delete cascade
-gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6))
+gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6, 7))
 approved_by     uuid references auth.users(id)
 approved_at     timestamptz default now()
 action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
-                  'cc_pause_approved',             -- Gate 5: BA approved continuation after CC 21+
-                  'cc_pause_rejected'              -- Gate 5: BA rejected for refactor after CC 21+
+                  'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
+                  'cc_pause_approved',             -- Gate 6: BA approved continuation after CC 21+
+                  'cc_pause_rejected'              -- Gate 6: BA rejected for refactor after CC 21+
                 ))
 edits_made      jsonb
 ```
 
-**v5.1 changes:**
-- `gate_number` check now covers 1–6 (was 1–5)
-- `action` includes `'sent'`, `'cc_pause_approved'`, `'cc_pause_rejected'`
+**v5.4 changes:**
+- `gate_number` check now covers 1–7 (was 1–6)
+- `action` adds `'voided'` (Gate 2: contextual re-injection); `cc_pause_approved`/`cc_pause_rejected` comments updated to Gate 6 (was Gate 5)
 
 ---
 

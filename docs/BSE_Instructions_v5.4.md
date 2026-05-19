@@ -114,41 +114,41 @@ These are non-negotiable. Every implementation decision must be validated agains
 ┌──────────────────────────────────────────────────────────────────┐
 │                  SPECIFICATION LAYER                             │
 │   OpenSpec WHEN/THEN/AND format generated from brief+solutions   │
-│   Spec files committed to client repo branch                    │
-│   Jira integration deferred — repo is the source of truth       │
+│   Spec files committed to client repo branch                     │
+│   Jira integration deferred — repo is the source of truth        │
 └─────────────────────┬────────────────────────────────────────────┘
                       │
                       ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                  CODE GENERATION LAYER                           │
 │   LangChain chain — Claude generates code via Anthropic API      │
-│   OpenSpec files + CONTEXT.md passed as context                 │
-│   /tdd skill active — red-green-refactor per user story         │
-│   /caveman active — token-efficient generation                  │
-│   Fallow hook — blocks commits introducing new dead code        │
-│   Code committed to GitHub branch: feature/{client}/{id}        │
-│   Preview deploy via Vercel MCP                                 │
+│   OpenSpec files + CONTEXT.md passed as context                  │
+│   /tdd skill active — red-green-refactor per user story          │
+│   /caveman active — token-efficient generation                   │
+│   Fallow hook — blocks commits introducing new dead code         │
+│   Code committed to GitHub branch: feature/{client}/{id}         │
+│   Preview deploy via Vercel MCP                                  │
 └─────────────────────┬────────────────────────────────────────────┘
                       │
                       ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                  REVIEW LOOP LAYER                               │
-│   Pre-check: lint + ESLint complexity + type-check +            │
-│              openspec validate --all --json    [v5.1 CHANGE]    │
-│   ESLint CC 21+: pause for human decision      [v5.1 CHANGE]    │
+│   Pre-check: lint + ESLint complexity + type-check +             │
+│              openspec validate --all --json    [v5.1 CHANGE]     │
+│   ESLint CC 21+: pause for human decision      [v5.1 CHANGE]     │
 │   LangChain chain — Gemini scores code on 5 dimensions           │
-│   Fix loop: /zoom-out + codeFixChain + /caveman                 │
+│   Fix loop: /zoom-out + codeFixChain + /caveman                  │
 │   Review loop report generated and delivered after loop ends     │
-│   At threshold (or max cycles): Gate 6 triggered                │
+│   At threshold (or max cycles): Gate 6 triggered                 │
 └─────────────────────┬────────────────────────────────────────────┘
                       │
                       ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                OUTPUT + STORAGE LAYER                            │
-│   A4 HTML → Puppeteer (@sparticuz/chromium) → PDF               │
-│   Microsoft Graph API → SharePoint                              │
-│   Power Automate — Teams + email notifications                  │
-│   Supabase — all records, state, artefacts, scores, reports     │
+│   A4 HTML → Puppeteer (@sparticuz/chromium) → PDF                │
+│   Microsoft Graph API → SharePoint                               │
+│   Power Automate — Teams + email notifications                   │
+│   Supabase — all records, state, artefacts, scores, reports      │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -167,9 +167,9 @@ Capture inputs (any combination)
                     → structured_brief (JSONB)
                               │
                     ┌─────────▼──────────────┐
-                    │  GATE 1 — Brief Review  │ ◀── BA edits / approves
-                    │  Teams: client intake   │
-                    │  submissions only       │
+                    │  GATE 1 — Brief Review │ ◀── BA edits / approves
+                    │  Teams: client intake  │
+                    │  submissions only      │
                     └─────────┬──────────────┘
                               │ [Approved]
                               ▼
@@ -178,7 +178,7 @@ Capture inputs (any combination)
                     → solutions (JSONB)
                               │
                     ┌─────────▼──────────────────┐
-                    │  GATE 2 — Solutions Review  │ ◀── BA edits / approves
+                    │  GATE 2 — Solutions Review │ ◀── BA edits / approves
                     └─────────┬──────────────────┘
                               │ [Approved]
                               ▼
@@ -190,18 +190,18 @@ Capture inputs (any combination)
                               │
                     ┌─────────▼──────────────────────────────────┐
                     │  GATE 3 — Business Proposal Review [v5.1]  │ ◀── BA previews PDF
-                    │  BA previews Comotion-branded PDF           │     Approves or rejects
-                    │  On approval: BA sends to client_email      │     Sends from app
-                    │  via Power Automate                         │
+                    │  BA previews Comotion-branded PDF          │     Approves or rejects
+                    │  On approval: BA sends to client_email     │     Sends from app
+                    │  via Power Automate                        │
                     └─────────┬──────────────────────────────────┘
                               │ [Approved + Sent]
                               ▼
                     ┌─────────▼──────────────────────────────────┐
                     │  GATE 4 — Client Decision & Context [v5.4] │ ◀── BA selects chosen
-                    │  BA selects chosen solution (required)      │     solution; adds
-                    │  Supplementary context: brain-dump /        │     context from client
-                    │  transcript / guided — all optional         │     conversation
-                    │  Or checks no-further-input                 │
+                    │  BA selects chosen solution (required)     │     solution; adds
+                    │  Supplementary context: brain-dump /       │     context from client
+                    │  transcript / guided — all optional        │     conversation
+                    │  Or checks no-further-input                │
                     └─────────┬──────────────────────────────────┘
                               │ [Approved → spec_pending]
                               ▼
@@ -220,8 +220,8 @@ Capture inputs (any combination)
                               │
                     ┌─────────▼──────────────────────────────────┐
                     │  GATE 5 — Spec Approval         [v5.1]     │ ◀── BA reviews OpenSpec
-                    │  BA reviews OpenSpec markdown files         │     files directly
-                    │  Flagged sections regenerate independently  │     Rejects flag sections
+                    │  BA reviews OpenSpec markdown files        │     files directly
+                    │  Flagged sections regenerate independently │     Rejects flag sections
                     └─────────┬──────────────────────────────────┘     for regeneration
                               │ [Approved]
                               ▼
@@ -245,21 +245,21 @@ Capture inputs (any combination)
                               │
                     ┌─────────▼────────────────────────────────────────┐
                     │  PRE-CHECK (automated)                [v5.1]     │
-                    │  lint (no API cost)                               │
+                    │  lint (no API cost)                              │
                     │  ESLint complexity rule:              [v5.1]     │
-                    │    CC 1–10: green / warn — pass                   │
-                    │    CC 11–20: error — auto-fed to fix loop         │
-                    │    CC 21+: untestable — PAUSE, notify BA          │
-                    │  type-check (no API cost)                         │
-                    │  openspec validate --all --json                   │
-                    │  Structural gaps caught before Gemini             │
+                    │    CC 1–10: green / warn — pass                  │
+                    │    CC 11–20: error — auto-fed to fix loop        │
+                    │    CC 21+: untestable — PAUSE, notify BA         │
+                    │  type-check (no API cost)                        │
+                    │  openspec validate --all --json                  │
+                    │  Structural gaps caught before Gemini            │
                     └─────────┬────────────────────────────────────────┘
                               │ [Passed — or BA approves 21+ continuation]
                               ▼
                     ┌─────────▼────────────────────────────────────────┐
-                    │  REVIEW LOOP (automated)                          │
-                    │  Gemini scores on 5 dimensions                    │
-                    │  Scores stored in Supabase: code_reviews          │
+                    │  REVIEW LOOP (automated)                         │
+                    │  Gemini scores on 5 dimensions                   │
+                    │  Scores stored in Supabase: code_reviews         │
                     │  Below threshold → /zoom-out + codeFixChain →    │
                     │  Gemini re-reviews (max cycles: REVIEW_MAX_CYCLES)│
                     │  At threshold OR max cycles → Gate 6 triggered    │

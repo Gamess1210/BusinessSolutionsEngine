@@ -2,15 +2,16 @@
 
 ---
 
-## Gate Numbering Reference [v5.1 CHANGE]
+## Gate Numbering Reference [v5.4 CHANGE]
 
 ```
 Gate 1 — Brief Review
 Gate 2 — Solutions Review
-Gate 3 — Business Proposal (NEW)
-Gate 4 — Spec Approval (was Gate 3)
-Gate 5 — Code Review (was Gate 4)
-Gate 6 — Output Review (was Gate 5)
+Gate 3 — Business Proposal
+Gate 4 — Client Decision and Context (NEW)
+Gate 5 — Spec Approval (was Gate 4)
+Gate 6 — Code Review (was Gate 5)
+Gate 7 — Output Review (was Gate 6)
 ```
 
 ---
@@ -224,9 +225,10 @@ Run once per client repo during setup. Installs a PreToolUse hook that intercept
 
 ```
 captured → brief_pending → gate1_review → solutions_pending → gate2_review
-→ proposal_pending → gate3_review → spec_pending → gate4_review
-→ code_pending → code_review → gate5_review
-→ output_pending → gate6_review → complete
+→ proposal_pending → gate3_review → gate4_review
+→ spec_pending → gate5_review
+→ code_pending → code_review → gate6_review
+→ output_pending → gate7_review → complete
 
 Any state → failed (on chain error)
 failed → [last_successful_gate state] (on BA retry)
