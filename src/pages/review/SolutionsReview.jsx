@@ -258,7 +258,7 @@ export default function SolutionsReview() {
   }
   if (!engagement) return null
 
-  if (engagement.status !== 'gate2_review') {
+  if (!engagement.solutions) {
     return (
       <div className="max-w-4xl mx-auto">
         <NotReadyState onBack={() => navigate(`/engagements/${id}`)} />
@@ -299,12 +299,14 @@ export default function SolutionsReview() {
         ))}
       </div>
 
-      <ActionFooter
-        onApprove={() => handleAction('approved')}
-        onReject={() => handleAction('rejected')}
-        actionLoading={actionLoading}
-        error={error}
-      />
+      {engagement.status === 'gate2_review' && (
+        <ActionFooter
+          onApprove={() => handleAction('approved')}
+          onReject={() => handleAction('rejected')}
+          actionLoading={actionLoading}
+          error={error}
+        />
+      )}
     </div>
   )
 }
