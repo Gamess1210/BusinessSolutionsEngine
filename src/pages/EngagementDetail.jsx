@@ -20,27 +20,107 @@ const GUIDED_QUESTIONS = [
   { section: 'E — Success', q: 'Is the preference for a technology solution, a process change, or a combination of both?' },
 ]
 
+const STATUS_ORDER = [
+  'captured',
+  'brief_pending',
+  'gate1_review',
+  'solutions_pending',
+  'gate2_review',
+  'proposal_pending',
+  'gate3_review',
+  'gate4_review',
+  'spec_pending',
+  'gate5_review',
+  'code_pending',
+  'code_review',
+  'gate6_review',
+  'output_pending',
+  'gate7_review',
+  'complete',
+]
+
 const STATUS_STEPS = [
   { key: 'captured', label: 'Captured' },
   { key: 'brief_pending', label: 'Generating Brief' },
   { key: 'gate1_review', label: 'Brief Review' },
   { key: 'solutions_pending', label: 'Generating Solutions' },
   { key: 'gate2_review', label: 'Solutions Review' },
-  { key: 'proposal_pending', label: 'Proposal Pending' },
+  { key: 'proposal_pending', label: 'Generating Proposal' },
   { key: 'gate3_review', label: 'Proposal Review' },
-  { key: 'gate4_review', label: 'Spec Approval' },
-  { key: 'gate5_review', label: 'Code Review' },
-  { key: 'gate6_review', label: 'Output Review' },
+  { key: 'gate4_review', label: 'Client Decision' },
+  { key: 'spec_pending', label: 'Generating Spec' },
+  { key: 'gate5_review', label: 'Spec Review' },
+  { key: 'code_pending', label: 'Generating Code' },
+  { key: 'code_review', label: 'Quality Review' },
+  { key: 'gate6_review', label: 'Code Review' },
+  { key: 'output_pending', label: 'Generating Outputs' },
+  { key: 'gate7_review', label: 'Output Review' },
   { key: 'complete', label: 'Complete' },
 ]
+
+const PENDING_LABELS = {
+  brief_pending: 'Generating brief…',
+  solutions_pending: 'Generating solutions…',
+  proposal_pending: 'Generating proposal…',
+  spec_pending: 'Generating specification…',
+  code_pending: 'Generating code…',
+  code_review: 'Running quality review…',
+  output_pending: 'Generating output documents…',
+}
+
+const GATE_REVIEW_CONFIG = {
+  gate1_review: {
+    description: 'Brief generated and ready for review.',
+    label: 'Review Brief →',
+    path: 'brief',
+  },
+  gate3_review: {
+    description: 'Proposal ready for review and client decision.',
+    label: 'Review Proposal →',
+    path: 'proposal',
+  },
+  gate4_review: {
+    description: "Proposal approved. Record the client's decision.",
+    label: 'Record Client Decision →',
+    path: 'client-decision',
+  },
+  gate5_review: {
+    description: 'Specification generated and ready for review.',
+    label: 'Review Specification →',
+    path: 'spec',
+  },
+  gate6_review: {
+    description: 'Code review complete. Ready for approval.',
+    label: 'Review Code →',
+    path: 'code',
+  },
+  gate7_review: {
+    description: 'Output documents generated and ready for final review.',
+    label: 'Review Outputs →',
+    path: 'outputs',
+  },
+}
+
+const COMPLETED_GATES = [
+  { threshold: 'gate2_review', label: 'Brief approved', linkLabel: 'View Brief →', path: 'brief' },
+  { threshold: 'gate3_review', label: 'Solutions approved', linkLabel: 'View Solutions →', path: 'solutions' },
+  { threshold: 'gate4_review', label: 'Proposal approved', linkLabel: 'View Proposal →', path: 'proposal' },
+  { threshold: 'gate5_review', label: 'Client decision recorded', linkLabel: 'View Decision →', path: 'client-decision' },
+  { threshold: 'gate6_review', label: 'Spec approved', linkLabel: 'View Spec →', path: 'spec' },
+  { threshold: 'gate7_review', label: 'Code approved', linkLabel: 'View Code →', path: 'code' },
+  { threshold: 'complete', label: 'Outputs approved', linkLabel: 'View Outputs →', path: 'outputs' },
+]
+
+function statusAtOrAfter(current, threshold) {
+  return STATUS_ORDER.indexOf(current) >= STATUS_ORDER.indexOf(threshold)
+}
 
 function StatusBar({ status, pipelinePhase }) {
   const showError = pipelinePhase === 'error' || (pipelinePhase === 'idle' && status === 'failed')
 
-  const effectiveStatus = pipelinePhase === 'running' ? 'solutions_pending' : status
-  const stepIndex = STATUS_STEPS.findIndex(s => s.key === effectiveStatus)
+  const stepIndex = STATUS_STEPS.findIndex(s => s.key === status)
   const activeIndex = stepIndex === -1 ? 0 : stepIndex
-  const isPending = effectiveStatus === 'brief_pending' || (effectiveStatus === 'solutions_pending' && pipelinePhase === 'running')
+  const isPending = PENDING_LABELS[status] !== undefined
 
   if (showError) {
     return (
@@ -185,7 +265,17 @@ export default function EngagementDetail() {
 }
 
 function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch }) {
-  const { status, last_successful_gate } = engagement
+  const panel = resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch })
+  return (
+    <>
+      {panel}
+      <PreviousGatesSection engagementId={engagement.id} status={engagement.status} />
+    </>
+  )
+}
+
+function resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch }) {
+  const { status, last_successful_gate, id } = engagement
 
   if (status === 'captured' || (status === 'failed' && last_successful_gate === 0)) {
     return (
@@ -197,7 +287,7 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
       />
     )
   }
-  if (status === 'solutions_pending' || (status === 'failed' && last_successful_gate === 1)) {
+  if (status === 'failed' && last_successful_gate === 1) {
     return (
       <SolutionsPendingSection
         engagement={engagement}
@@ -216,9 +306,18 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
       />
     )
   }
+  if (GATE_REVIEW_CONFIG[status]) {
+    return <GateReviewSection engagementId={id} config={GATE_REVIEW_CONFIG[status]} />
+  }
+  if (PENDING_LABELS[status]) {
+    return <PendingSection label={PENDING_LABELS[status]} />
+  }
+  if (status === 'complete') {
+    return <CompleteSection />
+  }
   return (
     <div className="bg-white rounded-lg border border-grey-mid p-8 text-center text-grey-dark text-sm">
-      Gate review screens coming soon. Current status: <strong>{status}</strong>
+      Current status: <strong>{status}</strong>
     </div>
   )
 }
@@ -358,6 +457,86 @@ function SolutionsPendingSection({ engagement, onStatusChange, onPhaseChange }) 
           {phase === 'running' ? loadingLabel : idleLabel}
         </button>
       </div>
+    </div>
+  )
+}
+
+function GateReviewSection({ engagementId, config }) {
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid">
+      <div className="p-6">
+        <p className="text-sm text-grey-dark">{config.description}</p>
+      </div>
+      <div className="border-t border-grey-mid px-6 py-4 bg-grey-light rounded-b-lg flex items-center justify-end">
+        <Link
+          to={`/review/${engagementId}/${config.path}`}
+          className="bg-navy text-white px-6 py-2 rounded font-semibold text-sm hover:bg-navy-light transition-colors"
+        >
+          {config.label}
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function PendingSection({ label }) {
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid p-8 text-center">
+      <div className="inline-flex items-center gap-3 animate-pulse">
+        <div className="w-3 h-3 rounded-full bg-navy" />
+        <p className="text-navy font-semibold text-sm">{label}</p>
+        <div className="w-3 h-3 rounded-full bg-navy" />
+      </div>
+      <p className="text-grey-dark text-xs mt-3">This may take a few minutes.</p>
+    </div>
+  )
+}
+
+function CompleteSection() {
+  return (
+    <div className="bg-white rounded-lg border border-grey-mid p-8 text-center">
+      <div className="inline-flex items-center gap-3">
+        <span className="w-8 h-8 rounded-full bg-cgreen text-white flex items-center justify-center text-sm font-bold">✓</span>
+        <p className="text-navy font-semibold text-sm">Engagement complete</p>
+      </div>
+      <p className="text-grey-dark text-xs mt-3">All gates approved. Review your outputs below.</p>
+    </div>
+  )
+}
+
+function PreviousGatesSection({ engagementId, status }) {
+  const [open, setOpen] = useState(false)
+  const completed = COMPLETED_GATES.filter(g => statusAtOrAfter(status, g.threshold))
+
+  if (completed.length === 0) return null
+
+  return (
+    <div className="mt-4 bg-white rounded-lg border border-grey-mid overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 text-sm font-medium text-grey-dark hover:text-navy transition-colors"
+      >
+        <span>Previous Gates</span>
+        <span className="text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="border-t border-grey-mid divide-y divide-grey-mid">
+          {completed.map(g => (
+            <div key={g.path} className="flex items-center justify-between px-6 py-3">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-cgreen text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</span>
+                <span className="text-sm text-grey-dark">{g.label}</span>
+              </div>
+              <Link
+                to={`/review/${engagementId}/${g.path}`}
+                className="text-sm text-navy font-medium hover:underline"
+              >
+                {g.linkLabel}
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
