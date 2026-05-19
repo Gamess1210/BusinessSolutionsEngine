@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SupplementaryContextBanner from '../components/SupplementaryContextBanner'
@@ -101,6 +101,12 @@ const GATE_REVIEW_CONFIG = {
   },
 }
 
+function getStepPath(stepKey) {
+  if (GATE_REVIEW_CONFIG[stepKey]) return GATE_REVIEW_CONFIG[stepKey].path
+  if (stepKey === 'gate2_review') return 'solutions'
+  return null
+}
+
 const COMPLETED_GATES = [
   { threshold: 'gate2_review', label: 'Brief approved', linkLabel: 'View Brief →', path: 'brief' },
   { threshold: 'gate3_review', label: 'Solutions approved', linkLabel: 'View Solutions →', path: 'solutions' },
@@ -115,7 +121,39 @@ function statusAtOrAfter(current, threshold) {
   return STATUS_ORDER.indexOf(current) >= STATUS_ORDER.indexOf(threshold)
 }
 
-function StatusBar({ status, pipelinePhase }) {
+function StepNode({ step, index, isCompleted, isActive, isPending, engagementId }) {
+  if (isActive) {
+    return (
+      <div className={`h-6 px-2 flex items-center rounded text-xs font-semibold bg-navy text-white flex-shrink-0${isPending ? ' animate-pulse' : ''}`}>
+        {step.label}
+      </div>
+    )
+  }
+  const reviewPath = isCompleted ? getStepPath(step.key) : null
+  if (isCompleted && reviewPath) {
+    return (
+      <Link
+        to={`/review/${engagementId}/${reviewPath}`}
+        title={step.label}
+        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-cgreen text-white flex-shrink-0 hover:opacity-80 transition-opacity"
+      >
+        ✓
+      </Link>
+    )
+  }
+  return (
+    <div
+      title={step.label}
+      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition-colors ${
+        isCompleted ? 'bg-cgreen text-white' : 'border-2 border-grey-mid text-grey-mid'
+      }`}
+    >
+      {isCompleted ? '✓' : index + 1}
+    </div>
+  )
+}
+
+function StatusBar({ status, pipelinePhase, engagementId }) {
   const showError = pipelinePhase === 'error' || (pipelinePhase === 'idle' && status === 'failed')
 
   const stepIndex = STATUS_STEPS.findIndex(s => s.key === status)
@@ -131,35 +169,25 @@ function StatusBar({ status, pipelinePhase }) {
   }
 
   return (
-    <div className="overflow-x-auto mb-8">
-      <div className="flex items-center justify-center min-w-max mx-auto">
+    <div className="mb-8">
+      <div className="flex items-center w-full">
         {STATUS_STEPS.map((step, i) => {
           const isCompleted = i < activeIndex
           const isActive = i === activeIndex
           return (
-            <div key={step.key} className="flex items-center flex-shrink-0">
-              {isActive ? (
-                <div
-                  className={`h-8 px-3 flex items-center rounded text-sm font-semibold bg-navy text-white${isPending ? ' animate-pulse' : ''}`}
-                >
-                  {step.label}
-                </div>
-              ) : (
-                <div
-                  title={step.label}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    isCompleted ? 'bg-cgreen text-white' : 'border-2 border-grey-mid text-grey-mid'
-                  }`}
-                >
-                  {isCompleted ? '✓' : i + 1}
-                </div>
-              )}
+            <Fragment key={step.key}>
+              <StepNode
+                step={step}
+                index={i}
+                isCompleted={isCompleted}
+                isActive={isActive}
+                isPending={isPending}
+                engagementId={engagementId}
+              />
               {i < STATUS_STEPS.length - 1 && (
-                <div className={`h-0.5 w-6 flex-shrink-0 ${
-                  i + 1 < activeIndex ? 'bg-cgreen' : 'bg-gray-300'
-                }`} />
+                <div className={`flex-1 h-px ${i + 1 < activeIndex ? 'bg-cgreen' : 'bg-gray-300'}`} />
               )}
-            </div>
+            </Fragment>
           )
         })}
       </div>
@@ -250,7 +278,7 @@ export default function EngagementDetail() {
         </div>
       </div>
 
-      <StatusBar status={engagement.status} pipelinePhase={pipelinePhase} />
+      <StatusBar status={engagement.status} pipelinePhase={pipelinePhase} engagementId={engagement.id} />
 
       <StatusSection
         engagement={engagement}

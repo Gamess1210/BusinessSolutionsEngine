@@ -48,18 +48,6 @@ function StakeholderTable({ stakeholders }) {
   )
 }
 
-function GeneratingPlaceholder() {
-  return (
-    <div className="bg-white rounded-lg border border-grey-mid p-12 text-center">
-      <div className="inline-flex items-center gap-3 animate-pulse">
-        <div className="w-3 h-3 rounded-full bg-navy" />
-        <p className="text-navy font-semibold text-sm">Brief is being generated...</p>
-        <div className="w-3 h-3 rounded-full bg-navy" />
-      </div>
-      <p className="text-grey-dark text-xs mt-3">This usually takes under a minute.</p>
-    </div>
-  )
-}
 
 function NotReadyState({ onBack }) {
   return (
@@ -208,7 +196,7 @@ export default function BriefReview() {
   }
   if (!engagement) return null
 
-  if (engagement.status !== 'gate1_review') {
+  if (!engagement.structured_brief) {
     return (
       <div className="max-w-4xl mx-auto">
         <NotReadyState onBack={() => navigate(`/engagements/${id}`)} />
@@ -238,12 +226,9 @@ export default function BriefReview() {
         </div>
       )}
 
-      {!engagement.structured_brief
-        ? <GeneratingPlaceholder />
-        : <BriefSections brief={engagement.structured_brief} />
-      }
+      <BriefSections brief={engagement.structured_brief} />
 
-      {engagement.structured_brief && (
+      {engagement.status === 'gate1_review' && (
         <ActionFooter
           onApprove={() => handleAction('approved')}
           onReject={() => handleAction('rejected')}
