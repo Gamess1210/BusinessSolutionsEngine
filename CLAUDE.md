@@ -27,11 +27,13 @@ All config is accessed via `import.meta.env.VITE_*`.
 
 ## Architecture Overview
 
-**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through a six-gate review pipeline.
+**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through a seven-gate review pipeline.
 
 ### Key Concepts
 
-**Engagement** — the central entity. Has `status` (captured → gate1_review → gate2_review → gate3_review → complete/rejected), `analysis_mode` (quick/deep), and `industry` (financial_services/general).
+**Engagement** — the central entity. Has `status`, `analysis_mode` (quick/deep), and `industry` (financial_services/general).
+
+Status state machine: `captured → brief_pending → gate1_review → solutions_pending → gate2_review → proposal_pending → gate3_review → gate4_review → spec_pending → gate5_review → code_pending → code_review → gate6_review → output_pending → gate7_review → complete`. Any state → `failed` on chain error. `failed` → last successful gate state on BA retry.
 
 **Capture modes** (how client input enters the system):
 - **Guided** — 14 structured discovery questions, one at a time
@@ -42,13 +44,14 @@ All config is accessed via `import.meta.env.VITE_*`.
 - **Quick Ideas** — Single Claude call, 3 solution options, <60s
 - **Deep Analysis** — Two sequential Claude calls, full brief + 5 solutions with ROI/risk, ~5min
 
-**Six-gate pipeline** (from `openspec/config.yaml`):
+**Seven-gate pipeline** (from `openspec/config.yaml`):
 1. Brief Review — human reviews AI-structured problem brief
 2. Solutions Review — human reviews generated solution options
-3. Business Proposal — client-facing PDF
-4. Spec Approval — OpenSpec files written to client repo
-5. Code Review — Gemini scorecard + ESLint complexity scores
-6. Output Review — final client documents
+3. Client Decision, Proposal and Confirmation Loop — BA selects chosen solution, generates and refines Document B
+4. Client Decision and Context — BA records chosen solution and captures post-meeting context
+5. Spec Approval — OpenSpec files written to client repo
+6. Code Review — Gemini scorecard + ESLint complexity scores
+7. Output Review — final client documents
 
 **Client Intake** — public token-based form at `/intake/:token`. Internal user generates a UUID token via Dashboard; client fills the form without auth; data lands in `engagement_inputs` with `intake_token`.
 
@@ -78,7 +81,7 @@ src/
   pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2)
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
-  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis
+  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, proposalGeneration, proposalEdit, contextGeneration, openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
   lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
   App.jsx         # Routes + ProtectedRoute
@@ -183,10 +186,12 @@ try {
 - All PDFs use the `comotion-a4-html-template.html` standard — read this file before writing any document generation code
 - Pipeline: Claude JSON → A4 HTML → Puppeteer (@sparticuz/chromium) → PDF → SharePoint
 - Never use standard `puppeteer` — always `puppeteer-core` + `@sparticuz/chromium`
-- Three documents per engagement:
-  - Business Proposal PDF (Gate 3, client-facing, sent to client_email)
-  - Final Client Brief PDF (Gate 6, client-facing)
-  - Review Loop Report PDF (internal only, never sent to clients)
+- Five documents per engagement:
+  - Document A: Solution Options Summary PDF (after Gate 2, all approved options, not client-branded)
+  - Document B: Business Proposal PDF (Gate 3, client-facing, Comotion-branded, chosen solution only)
+  - Final Client Brief PDF (Gate 7, client-facing)
+  - Review Loop Report PDF (Gate 7, internal only, never sent to clients)
+  - Project Summary PDF (Gate 7, internal only, full engagement audit trail, never sent to clients)
 
 ### Schema Rules
 - Never store spec content in Supabase — specs live in the client GitHub repo
