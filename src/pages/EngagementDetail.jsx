@@ -290,7 +290,7 @@ export default function EngagementDetail() {
       />
 
       {engagement.sharepoint_solution_options_url && (
-        <DocumentASection url={engagement.sharepoint_solution_options_url} />
+        <DocumentASection url={engagement.sharepoint_solution_options_url} engagementId={engagement.id} />
       )}
 
       {engagement.sharepoint_proposal_url && (
@@ -304,8 +304,9 @@ export default function EngagementDetail() {
   )
 }
 
-function DocumentASection({ url }) {
-  const filename = url.split('/').pop()?.split('?')[0] ?? 'SolutionOptions.pdf'
+function DocumentASection({ url, engagementId }) {
+  const isLocalDev = url === 'local-dev-skip'
+  const filename = isLocalDev ? 'SolutionOptions.pdf' : (url.split('/').pop()?.split('?')[0] ?? 'SolutionOptions.pdf')
   return (
     <div className="mt-4 bg-white rounded-lg border border-grey-mid p-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -315,14 +316,26 @@ function DocumentASection({ url }) {
           <p className="text-xs text-grey-dark mt-0.5">{decodeURIComponent(filename)}</p>
         </div>
       </div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm font-medium text-navy hover:underline flex items-center gap-1"
-      >
-        Open in SharePoint →
-      </a>
+      <div className="flex items-center gap-3">
+        {!isLocalDev && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-navy hover:underline"
+          >
+            Open in SharePoint →
+          </a>
+        )}
+        <a
+          href={`/preview/${engagementId}/solutions`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-navy hover:underline"
+        >
+          Preview →
+        </a>
+      </div>
     </div>
   )
 }
@@ -330,7 +343,8 @@ function DocumentASection({ url }) {
 function DocumentBSection({ url, engagementId, status }) {
   const [sendState, setSendState] = useState('idle')
   const [sendError, setSendError] = useState(null)
-  const filename = url.split('/').pop()?.split('?')[0] ?? 'BusinessProposal.pdf'
+  const isLocalDev = url === 'local-dev-skip'
+  const filename = isLocalDev ? 'BusinessProposal.pdf' : (url.split('/').pop()?.split('?')[0] ?? 'BusinessProposal.pdf')
 
   async function handleSend() {
     setSendState('loading')
@@ -363,13 +377,23 @@ function DocumentBSection({ url, engagementId, status }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {!isLocalDev && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-navy hover:underline"
+            >
+              Open in SharePoint →
+            </a>
+          )}
           <a
-            href={url}
+            href={`/preview/${engagementId}/proposal`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-medium text-navy hover:underline"
           >
-            Open in SharePoint →
+            Preview →
           </a>
           {status === 'gate4_review' && sendState !== 'sent' && (
             <button

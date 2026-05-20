@@ -10,6 +10,8 @@ import ClientDecisionReview from './pages/review/ClientDecisionReview'
 import SpecReview from './pages/review/SpecReview'
 import CodeReview from './pages/review/CodeReview'
 import OutputsReview from './pages/review/OutputsReview'
+import ProposalPreview from './pages/preview/ProposalPreview'
+import SolutionsPreview from './pages/preview/SolutionsPreview'
 import Login from './pages/Login'
 import { useAuth } from './hooks/useAuth'
 import IntakeForm from './pages/IntakeForm'
@@ -26,6 +28,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/intake/:token" element={<IntakeForm />} />
+      <Route path="/preview/:id/proposal" element={<ProtectedRoute><ProposalPreview /></ProtectedRoute>} />
+      <Route path="/preview/:id/solutions" element={<ProtectedRoute><SolutionsPreview /></ProtectedRoute>} />
       <Route
         path="/"
         element={

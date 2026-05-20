@@ -50,7 +50,11 @@ Generated date: {generated_date}
 Approved solutions to summarise:
 {solutions_json}
 
-Produce a Solution Options Summary JSON. Keep descriptions clear and professional.`
+Produce a Solution Options Summary JSON.
+Requirements:
+- Each option description must be 2-3 paragraphs — not a one-liner. Cover what the solution does, how it addresses the problem, and the key benefit to the client.
+- For deep analysis options: feasibility and roi_framing must each be a full paragraph, not a sentence fragment.
+- Keep language clear, professional, and non-technical — suitable for a business audience.`
 
 export function getDocumentASchema(analysisMode) {
   return analysisMode === 'deep' ? DEEP_SCHEMA : QUICK_SCHEMA
