@@ -50,7 +50,7 @@ export default function NewEngagement() {
   const [department, setDepartment] = useState('')
   const [industry, setIndustry] = useState('financial_services')
   const [captureMode, setCaptureMode] = useState(null)
-  const [analysisMode, setAnalysisMode] = useState(null)
+  const [analysisMode, setAnalysisMode] = useState('deep')
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
@@ -59,7 +59,6 @@ export default function NewEngagement() {
     const email = clientEmail.trim()
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Client email must be a valid email address.'
     if (!captureMode) return 'Please select a capture mode.'
-    if (!analysisMode) return 'Please select an analysis mode.'
     return null
   }
 

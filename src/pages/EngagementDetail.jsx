@@ -402,10 +402,9 @@ function StatusSection({ engagement, inputs, onInputAdded, onStatusChange, onPha
   )
 }
 
-function resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch }) {
-  const { status, last_successful_gate, id } = engagement
-
-  if (status === 'captured' || (status === 'failed' && last_successful_gate === 0)) {
+function resolveRetryPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange }) {
+  const { last_successful_gate } = engagement
+  if (last_successful_gate === 0) {
     return (
       <CaptureSection
         engagement={engagement}
@@ -415,7 +414,7 @@ function resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, 
       />
     )
   }
-  if (status === 'failed' && last_successful_gate === 1) {
+  if (last_successful_gate === 1) {
     return (
       <SolutionsPendingSection
         engagement={engagement}
@@ -423,6 +422,34 @@ function resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, 
         onPhaseChange={onPhaseChange}
       />
     )
+  }
+  return null
+}
+
+function resolveStatusPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange, onRefetch }) {
+  const { status, id } = engagement
+
+  if (status === 'captured') {
+    return (
+      <CaptureSection
+        engagement={engagement}
+        inputs={inputs}
+        onInputAdded={onInputAdded}
+        onStatusChange={onStatusChange}
+      />
+    )
+  }
+  if (status === 'solutions_pending') {
+    return (
+      <SolutionsPendingSection
+        engagement={engagement}
+        onStatusChange={onStatusChange}
+        onPhaseChange={onPhaseChange}
+      />
+    )
+  }
+  if (status === 'failed') {
+    return resolveRetryPanel({ engagement, inputs, onInputAdded, onStatusChange, onPhaseChange })
   }
   if (status === 'gate2_review') {
     return (
