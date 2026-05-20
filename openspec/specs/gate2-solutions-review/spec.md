@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+Defines the Gate 2 Solutions Review page (`/review/:id/solutions`). The page renders solution cards in mode-aware layout (deep vs. quick), allows the BA to edit solution titles and descriptions inline, and provides Approve and Reject actions that POST to the Gate 2 approval API route.
+
+## Requirements
 
 ### Requirement: SolutionsReview page renders solution cards in mode-aware layout
 The system SHALL provide a `SolutionsReview` page at `src/pages/review/SolutionsReview.jsx`, accessible at `/review/:id/solutions`. The page SHALL fetch the engagement by `id` and render each solution in `engagements.solutions` as a card. When `engagement.analysis_mode` is `deep`, cards SHALL display `title`, `description`, `feasibility`, `complexity`, `roi_framing`, `risks`, `sequencing`, and `ai_central`. When `analysis_mode` is `quick` or absent, cards SHALL display `title`, `description`, `effort`, `impact`, and `key_risk`. The page SHALL be accessible only to authenticated users and SHALL redirect to `/engagements/:id` if `engagement.status` is not `gate2_review`.

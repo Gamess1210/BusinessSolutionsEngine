@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+Defines the Gate 2 approval API route (`api/pipeline/gate2-approve.js`). The route validates engagement state, persists BA-edited solutions, records a `gate_approvals` record, and advances status to `proposal_pending` on approval or reverts to `solutions_pending` on rejection.
+
+## Requirements
 
 ### Requirement: Gate 2 approve API route enforces gate pre-conditions
 The system SHALL provide a Vercel serverless route at `api/pipeline/gate2-approve.js` that accepts `POST` requests with `{ engagementId, action, solutions }` in the body. The route SHALL verify that the engagement exists, belongs to the authenticated user, and has status `gate2_review` before acting. The route SHALL use `SUPABASE_SERVICE_ROLE_KEY` for all Supabase reads and writes. `action` SHALL be one of `approved` or `rejected`.

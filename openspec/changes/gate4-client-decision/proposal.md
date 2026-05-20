@@ -15,7 +15,10 @@ A new **Gate 4 — Client Decision and Context** is inserted between the current
 
 ### What Gate 4 captures
 
-1. **Chosen solution** (required) — BA selects one solution from the approved options via radio button. Stored as `chosen_solution JSONB` on the `engagements` table.
+1. **Chosen solution** (confirmation, not selection) — `chosen_solution` is already recorded in `engagements.chosen_solution` by `gate3-select-solution.js` at Gate 3 Part 1. Gate 4 displays it read-only so the BA can confirm the correct solution is locked before spec generation begins. No radio button or re-selection UI is present at this gate.
+
+   > **Divergence from v5.5 §7.1 and §7.7**: BSE Instructions v5.5 describes Gate 4 as requiring "BA selects chosen solution from approved options (required, radio button selection)." This was written before Gate 3 Part 1 (solution selection) was implemented. Because Gate 3 already persists `chosen_solution` via `gate3-select-solution.js`, re-selection at Gate 4 would invalidate the approved proposal. The deliberate design decision made during the gate4-client-decision change (2026-05-20) is: Gate 4 confirms the selection, Gate 3 owns the selection. The v5.5 schema annotation `chosen_solution jsonb -- the selected solution object from Gate 4` is also stale for the same reason.
+
 2. **Supplementary context** (any combination, all optional):
    - Brain-dump — free text notes from the client conversation
    - Transcript — paste a Fireflies or other meeting transcript
