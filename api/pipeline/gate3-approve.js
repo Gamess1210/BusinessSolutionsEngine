@@ -44,6 +44,7 @@ function isSharePointConfigured() {
 async function generateAndUpload(engagement, proposalJson) {
   const html = renderProposalHtml(proposalJson)
   const pdfBuffer = await generatePdf(html)
+  if (pdfBuffer === null) return 'local-dev-skip'
   if (!isSharePointConfigured()) {
     console.warn('[BSE] SharePoint upload skipped — Microsoft credentials not configured')
     return null

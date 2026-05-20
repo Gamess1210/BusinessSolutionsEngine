@@ -29,8 +29,14 @@ async function parseJsonWithFallback(message) {
     return await _jsonParser.invoke(message)
   } catch {
     const text = typeof message.content === 'string' ? message.content : String(message)
+    const stripped = stripJsonFences(text)
+    const start = stripped.search(/[{[]/)
+    if (start === -1) throw new Error('documentAGenerationChain: failed to parse Claude response as JSON')
+    const closeChar = stripped[start] === '{' ? '}' : ']'
+    const end = stripped.lastIndexOf(closeChar)
+    if (end === -1) throw new Error('documentAGenerationChain: failed to parse Claude response as JSON')
     try {
-      return JSON.parse(stripJsonFences(text))
+      return JSON.parse(stripped.slice(start, end + 1))
     } catch {
       throw new Error('documentAGenerationChain: failed to parse Claude response as JSON')
     }

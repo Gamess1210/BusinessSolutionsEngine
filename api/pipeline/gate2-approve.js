@@ -90,6 +90,7 @@ async function generateDocumentA(engagement) {
   const docAJson = await documentAGenerationChain.invoke({ engagement })
   const html = renderDocumentAHtml(docAJson)
   const pdfBuffer = await generatePdf(html)
+  if (pdfBuffer === null) return 'local-dev-skip'
   if (!isSharePointConfigured()) {
     console.warn('[BSE] SharePoint upload skipped — Microsoft credentials not configured')
     return null
