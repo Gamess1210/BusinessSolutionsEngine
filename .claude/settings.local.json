@@ -19,7 +19,9 @@
       "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/proposal-generation-chain\")",
       "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/proposal-edit-chain\")",
       "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate3-api-routes\")",
-      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate2-solutions-review\")"
+      "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate2-solutions-review\")",
+      "Bash(dir C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\specs *)",
+      "PowerShell(Move-Item *)"
     ]
   }
 }
