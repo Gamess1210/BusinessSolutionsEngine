@@ -100,23 +100,22 @@ async function generateDocumentA(engagement) {
   return uploadToSharePoint({ buffer: pdfBuffer, filename, clientName: engagement.client_name, date })
 }
 
+async function tryGenerateDocumentA(supabaseAdmin, engagementId) {
+  try {
+    const fullEngagement = await getEngagementForDocumentA(supabaseAdmin, engagementId)
+    return await generateDocumentA(fullEngagement)
+  } catch (docError) {
+    console.warn(`[BSE] Document A generation failed for ${engagementId} (non-fatal):`, docError.message)
+    return null
+  }
+}
+
 async function finalizeDocumentA(supabaseAdmin, engagementId, url) {
   const { error } = await supabaseAdmin
     .from('engagements')
     .update({ sharepoint_solution_options_url: url, status: 'gate3_review' })
     .eq('id', engagementId)
   if (error) throw error
-}
-
-async function setDocumentAFailed(supabaseAdmin, engagementId, err) {
-  await supabaseAdmin
-    .from('engagements')
-    .update({
-      status: 'failed',
-      last_successful_gate: 2,
-      error_log: { message: err.message, chain: 'documentAGenerationChain', timestamp: new Date().toISOString() },
-    })
-    .eq('id', engagementId)
 }
 
 export default async function handler(req, res) {
@@ -155,15 +154,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Gate approval failed', engagementId })
   }
 
-  // approved path — phase 2: generate and file Document A
+  // approved path — phase 2: advance status; Document A failure is non-fatal
   try {
-    const fullEngagement = await getEngagementForDocumentA(supabaseAdmin, engagementId)
-    const url = await generateDocumentA(fullEngagement)
-    await finalizeDocumentA(supabaseAdmin, engagementId, url)
+    const docAUrl = await tryGenerateDocumentA(supabaseAdmin, engagementId)
+    await finalizeDocumentA(supabaseAdmin, engagementId, docAUrl)
     return res.status(200).json({ success: true, engagementId })
-  } catch (docError) {
-    console.error(`[BSE] Document A generation failed for ${engagementId}:`, docError.message)
-    await setDocumentAFailed(supabaseAdmin, engagementId, docError).catch(() => {})
-    return res.status(500).json({ error: 'Document A generation failed', engagementId })
+  } catch (dbError) {
+    console.error(`[BSE] Failed to advance status after Gate 2 approval for ${engagementId}:`, dbError.message)
+    return res.status(500).json({ error: 'Failed to advance engagement status', engagementId })
   }
 }
