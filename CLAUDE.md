@@ -188,9 +188,15 @@ try {
 - All PDFs use the `comotion-a4-html-template.html` standard — read this file before writing any document generation code
 - Pipeline: Claude JSON → A4 HTML → Puppeteer (@sparticuz/chromium) → PDF → SharePoint
 - Never use standard `puppeteer` — always `puppeteer-core` + `@sparticuz/chromium`
-- Five documents per engagement:
+- Eleven documents per engagement:
   - Document A: Solution Options Summary PDF (after Gate 2, all approved options, not client-branded)
   - Document B: Business Proposal PDF (Gate 3, client-facing, Comotion-branded, chosen solution only)
+  - As-Is Process Map PDF (after Gate 1 approval, internal + client validation)
+  - Business Requirements Document (BRD) PDF (after Gate 1 approval, client sign-off)
+  - Stakeholder Impact Assessment (SIA) PDF (after Gate 3 proposal sent, internal + client sponsor)
+  - To-Be Process Map PDF (after Gate 6 approval, internal + client sign-off)
+  - Requirements Traceability Matrix (RTM) PDF (progressive: initial after Gate 1, updated after Gate 6, finalised after Gate 7 — mandatory for financial services)
+  - Business Readiness and Change Management Plan PDF (after Gate 7 approval, client-facing)
   - Final Client Brief PDF (Gate 8, client-facing)
   - Review Loop Report PDF (Gate 8, internal only, never sent to clients)
   - Project Summary PDF (Gate 8, internal only, full engagement audit trail, never sent to clients)

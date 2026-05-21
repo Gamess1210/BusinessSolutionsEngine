@@ -34,7 +34,7 @@ export default defineConfig([
   },
   {
     // Server-side-only lib helpers (no browser runtime)
-    files: ['src/lib/sharepoint.js', 'src/lib/generatePdf.js'],
+    files: ['src/lib/sharepoint.js', 'src/lib/generatePdf.js', 'src/lib/generateBaDoc.js'],
     languageOptions: {
       globals: globals.node,
     },

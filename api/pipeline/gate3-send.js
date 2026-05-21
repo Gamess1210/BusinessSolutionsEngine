@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { generateBaDoc } from '../../src/lib/generateBaDoc.js'
 
 function createAdminClient() {
   return createClient(
@@ -64,9 +65,12 @@ export default async function handler(req, res) {
 
   try {
     await triggerPowerAutomate(engagementId, engagement.sharepoint_proposal_url, engagement.client_email)
-    return res.status(200).json({ success: true, engagementId })
   } catch (err) {
     console.error(`[BSE] gate3-send failed for ${engagementId}:`, err.message)
     return res.status(500).json({ error: 'Send to client failed', details: err.message })
   }
+
+  // SIA fires after successful Power Automate call — non-fatal
+  await generateBaDoc(supabaseAdmin, engagementId, 'sia')
+  return res.status(200).json({ success: true, engagementId })
 }
