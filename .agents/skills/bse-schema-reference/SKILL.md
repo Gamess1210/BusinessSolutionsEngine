@@ -6,7 +6,7 @@ Refer to this before writing any database query.
 
 ---
 
-## Table: engagements [v5.4 CHANGE]
+## Table: engagements [v5.4 CHANGE] [v5.6 CHANGE]
 
 ```sql
 id                    uuid primary key default gen_random_uuid()
@@ -24,17 +24,21 @@ status                text default 'captured' check (status in (
                         'solutions_pending', 'gate2_review',
                         'proposal_pending', 'gate3_review',
                         'gate4_review',
-                        'spec_pending', 'gate5_review',
-                        'code_pending', 'code_review', 'gate6_review',
-                        'output_pending', 'gate7_review', 'complete',
+                        'plan_pending', 'gate5_review',
+                        'spec_pending', 'gate6_review',
+                        'code_pending', 'code_review', 'gate7_review',
+                        'output_pending', 'gate8_review', 'complete',
                         'rejected', 'failed'
-                      ))
+                      ))  -- [v5.6] plan_pending/gate5_review added; gate5→6, gate6→7, gate7→8
 last_successful_gate  int                -- set on failure; used for retry
 error_log             jsonb              -- populated on failure; cleared on retry
 structured_brief      jsonb
 solutions             jsonb
 chosen_solution       jsonb              -- the selected solution object from Gate 4 [v5.4]
 gate4_no_further_input boolean default false  -- true if BA confirmed no additional context [v5.4]
+project_plan          jsonb              -- approved project plan: epics, stories, tasks [v5.6]
+plan_conversation     jsonb              -- full Q&A history for project plan session [v5.6]
+current_epic_index    int default 0      -- tracks which epic is currently being built [v5.6]
 sharepoint_proposal_url text             -- business proposal PDF [v5.1]
 sharepoint_brief_url  text
 sharepoint_deck_url   text
@@ -68,27 +72,35 @@ created_at      timestamptz default now()
 
 ---
 
-## Table: gate_approvals [v5.4 CHANGE]
+## Table: gate_approvals [v5.4 CHANGE] [v5.6 CHANGE]
 
 ```sql
 id              uuid primary key default gen_random_uuid()
 engagement_id   uuid references engagements(id) on delete cascade
-gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6, 7))
+gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6, 7, 8))  -- [v5.6] extended to 8; gate 5 = Gate 4b
 approved_by     uuid references auth.users(id)
 approved_at     timestamptz default now()
 action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
                   'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
-                  'cc_pause_approved',             -- Gate 6: BA approved continuation after CC 21+
-                  'cc_pause_rejected'              -- Gate 6: BA rejected for refactor after CC 21+
+                  'plan_approved',                 -- Gate 4b: BA approved the project plan [v5.6]
+                  'cc_pause_approved',             -- Gate 7: BA approved continuation after CC 21+
+                  'cc_pause_rejected',             -- Gate 7: BA rejected for refactor after CC 21+
+                  'manual_override'                -- Gate 8: BA confirmed manual upload after 2 failed retries [v5.2]
                 ))
 edits_made      jsonb
 ```
 
 **v5.4 changes:**
-- `gate_number` check now covers 1–7 (was 1–6)
-- `action` adds `'voided'` (Gate 2: contextual re-injection); `cc_pause_approved`/`cc_pause_rejected` comments updated to Gate 6 (was Gate 5)
+- `gate_number` check covers 1–7 (was 1–6)
+- `action` adds `'voided'` (Gate 2: contextual re-injection)
+
+**v5.6 changes:**
+- `gate_number` check extended to 1–8; gate 5 = Gate 4b (Project Plan)
+- `action` adds `'plan_approved'` (Gate 4b: BA approved project plan)
+- `cc_pause_approved`/`cc_pause_rejected` comments updated to Gate 7 (was Gate 6)
+- `manual_override` added (Gate 8: manual SharePoint upload override [v5.2])
 
 ---
 

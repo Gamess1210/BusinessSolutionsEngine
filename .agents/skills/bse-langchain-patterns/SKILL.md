@@ -30,9 +30,9 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 
 ---
 
-## Model Assignment Table [v5.1 CHANGE]
+## Model Assignment Table [v5.1 CHANGE] [v5.6 CHANGE]
 
-**Gate 4 — no AI chain [v5.4]:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. `contextGenerationChain` and `openspecGenerationChain` run after Gate 4 approval, not Gate 3.
+**Gate 4 — no AI chain [v5.4]:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. `contextGenerationChain` and `openspecGenerationChain` run after Gate 4b approval, not Gate 4.
 
 | Chain | File | Model | Reason |
 |---|---|---|---|
@@ -40,8 +40,9 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 | quickIdeasChain | chains/quickIdeas.js | Claude (claude-sonnet-4-20250514) | Solution generation |
 | deepAnalysisChain | chains/deepAnalysis.js | Claude (claude-sonnet-4-20250514) | Deep solution generation |
 | proposalGenerationChain | chains/proposalGeneration.js | Claude (claude-sonnet-4-20250514) | Business proposal document generation |
-| contextGenerationChain | chains/contextGeneration.js | Claude (claude-sonnet-4-20250514) | Domain vocabulary extraction — runs after Gate 4 approval |
-| openspecGenerationChain | chains/openspecGeneration.js | Claude (claude-sonnet-4-20250514) | OpenSpec file generation — runs after Gate 4 approval |
+| projectPlanChain | chains/projectPlan.js | Claude (claude-sonnet-4-20250514) | Interactive project planning — discovery questions and plan generation [v5.6 NEW] |
+| contextGenerationChain | chains/contextGeneration.js | Claude (claude-sonnet-4-20250514) | Domain vocabulary extraction — runs after Gate 4b approval |
+| openspecGenerationChain | chains/openspecGeneration.js | Claude (claude-sonnet-4-20250514) | OpenSpec file generation — runs after Gate 4b approval, epic by epic |
 | codeGenerationChain | chains/codeGeneration.js | Claude (claude-sonnet-4-20250514) | Code generation |
 | codeFixChain | chains/codeFix.js | Claude (claude-sonnet-4-20250514) | Fix application |
 | codeReviewChain | chains/codeReview.js | Gemini (gemini-2.0-flash) | Independent review — must never be same model as generator |
