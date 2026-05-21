@@ -2,7 +2,7 @@
 
 **How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0, v5.1, v5.2, v5.3, v5.4, v5.5) and all prior pipeline planning notes.
 
-**What changed from v5.5** Sections 2, 5.2, 6.2, 6.3, 7.1, 7.3b (new), 7.4, 7.5, 7.6, 7.7, 7.8, 9, 15, 16, 19, and 20 updated. Gate 4b (Project Plan) inserted between Gate 4 and Gate 5. Gates 5, 6, 7 renumbered to 6, 7, 8. Pipeline is now an eight-gate pipeline. New interactive project planning session at Gate 4b: Claude conducts iterative discovery inside a chat-like BSE interface, generates a detailed project plan (epics, stories, tasks) in markdown and OpenSpec WHEN/THEN/AND format, and iterates until BA approves. Spec generation and code generation are now epic-by-epic: each epic in the approved project plan becomes a capability folder, and each has its own gate_approvals record. New chain: `projectPlanChain` (Claude). New API routes: `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve`. New page: `src/pages/review/ProjectPlanReview.jsx`. New schema columns on `engagements`: `project_plan`, `plan_conversation`, `current_epic_index`. New statuses: `plan_pending`, `gate5_review`. All prior gate status references updated throughout. See the change log at the end of this document for a full summary. [v5.6]
+**What changed from v5.5** Sections 2, 5.2, 6.2, 6.3, 7.1, 7.5 (new), 7.4, 7.6, 7.7, 7.8, 7.9, 9, 15, 16, 19, and 20 updated. Gate 5 (Project Plan) inserted between Gate 4 and Gate 6. Gates 5, 6, 7 renumbered to 6, 7, 8. Pipeline is now an eight-gate pipeline. New interactive project planning session at Gate 5: Claude conducts iterative discovery inside a chat-like BSE interface, generates a detailed project plan (epics, stories, tasks) in markdown and OpenSpec WHEN/THEN/AND format, and iterates until BA approves. Spec generation and code generation are now epic-by-epic: each epic in the approved project plan becomes a capability folder, and each has its own gate_approvals record. New chain: `projectPlanChain` (Claude). New API routes: `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve`. New page: `src/pages/review/ProjectPlanReview.jsx`. New schema columns on `engagements`: `project_plan`, `plan_conversation`, `current_epic_index`. New statuses: `plan_pending`, `gate5_review`. All prior gate status references updated throughout. See the change log at the end of this document for a full summary. [v5.6]
 
 ---
 
@@ -33,7 +33,7 @@ This is intentional. The Business Solutions division role is explicitly hybrid �
 | Capture & Brief | Hybrid BA | Gates 1–2 |
 | Proposal | Hybrid BA | Gate 3 |
 | Client Decision & Context | Hybrid BA | Gate 4 |
-| Project Plan | Hybrid BA | Gate 4b |
+| Project Plan | Hybrid BA | Gate 5 |
 | Specification | Hybrid BA | Gate 6 |
 | Code Generation & Review | Hybrid BA | Gate 7 |
 | Output & Delivery | Hybrid BA | Gate 8 |
@@ -214,7 +214,7 @@ Capture inputs (any combination)
                     Plan stored in engagements.project_plan
                               │
                     ┌─────────▼──────────────────────────────────┐
-                    │  GATE 4b — Project Plan Review  [v5.6 NEW] │ ◀── BA reviews plan,
+                    │  GATE 5 — Project Plan Review  [v5.6 NEW] │ ◀── BA reviews plan,
                     │  Interactive chat session in BSE           │     iterates with Claude,
                     │  BA can request changes; no round limit    │     approves
                     └─────────┬──────────────────────────────────┘
@@ -338,9 +338,9 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 
 `proposalGenerationChain` is added as a new chain between `deepAnalysisChain` and `contextGenerationChain`. Gate numbering updated throughout.
 
-**Gate 4 — no AI chain:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. After Gate 4 approval, `projectPlanChain` runs interactively at Gate 4b before spec generation begins. `contextGenerationChain` and `openspecGenerationChain` run after Gate 4b approval, immediately before Gate 6, epic by epic. [v5.4] [v5.6 CHANGE]
+**Gate 4 — no AI chain:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. After Gate 4 approval, `projectPlanChain` runs interactively at Gate 5 before spec generation begins. `contextGenerationChain` and `openspecGenerationChain` run after Gate 5 approval, immediately before Gate 6, epic by epic. [v5.4] [v5.6 CHANGE]
 
-**Gate 4b — projectPlanChain:** Gate 4b (Project Plan) is an interactive session driven by `projectPlanChain`. Claude asks probing discovery questions inside the BSE, generates a detailed project plan (epics, stories, tasks), and iterates until the BA approves. On approval (gate_number=5, action='plan_approved'), the plan is stored in `engagements.project_plan` and status advances to `spec_pending`. See Section 7.3b for full detail. [v5.6 NEW]
+**Gate 5 — projectPlanChain:** Gate 5 (Project Plan) is an interactive session driven by `projectPlanChain`. Claude asks probing discovery questions inside the BSE, generates a detailed project plan (epics, stories, tasks), and iterates until the BA approves. On approval (gate_number=5, action='plan_approved'), the plan is stored in `engagements.project_plan` and status advances to `spec_pending`. See Section 7.5 for full detail. [v5.6 NEW]
 
 | Chain | File | Description |
 |---|---|---|
@@ -519,7 +519,7 @@ ESLint complexity scoring runs independently in pre-check and is displayed separ
 - `/review/[id]/solutions` — Gate 2 review. Includes supplementary context panel — capture input tabs remain accessible at gate2_review status to allow the BA to add new inputs before Gate 3. A banner prompts re-run of consolidationChain and solution generation if new input is added.
 - `/review/[id]/proposal` — Gate 3 review. BA selects chosen solution, adds supplementary context, reviews and edits Document B in a loop until satisfied, then approves. [v5.5 CHANGE]
 - `/review/[id]/client-decision` — Gate 4 client decision. BA selects chosen solution from approved options (required, radio button selection), adds supplementary context via brain-dump, transcript, or guided questions (all optional), or checks no-further-input. Advances to plan_pending on approval. [v5.4 NEW]
-- `/review/[id]/project-plan` — Gate 4b project plan review. Chat-like interface. BA reviews and iterates on the project plan with Claude. Approves when satisfied. [v5.6 NEW]
+- `/review/[id]/project-plan` — Gate 5 project plan review. Chat-like interface. BA reviews and iterates on the project plan with Claude. Approves when satisfied. [v5.6 NEW]
 - `/review/[id]/spec` — Gate 6 spec review. Renders OpenSpec markdown files. Sections flaggable for regeneration.
 - `/review/[id]/code` — Gate 7 code review. Gemini scorecard, ESLint CC scores per file, per-cycle review history, diff view, escalation flag. [v5.1 CHANGE]
 - `/review/[id]/outputs` — Gate 8 output preview and final approval. Client documents only — no scorecard.
@@ -565,11 +565,11 @@ Gate 3 is the Client Decision, Proposal and Confirmation Loop. It combines three
 
 `proposalGenerationChain` input: chosen solution + all `engagement_inputs` + `engagements.structured_brief` (not all solutions — only the chosen one)
 
-### 7.3b Gate 4b — Project Plan [v5.6 NEW]
+### 7.5 Gate 5 — Project Plan [v5.6 NEW]
 
-Gate 4b is the Project Plan review. It is an interactive session between the BA and Claude, conducted inside the BSE at `/review/:id/project-plan`. The session begins immediately after Gate 4 approval (status = `plan_pending`).
+Gate 5 is the Project Plan review. It is an interactive session between the BA and Claude, conducted inside the BSE at `/review/:id/project-plan`. The session begins immediately after Gate 4 approval (status = `plan_pending`).
 
-**What happens at Gate 4b:**
+**What happens at Gate 5:**
 
 1. Claude begins by asking probing discovery questions about the project in a chat-like interface inside the BSE. Questions are dynamic and iterative — Claude asks follow-ups based on BA answers. Topics covered include:
    - Timeline and budget constraints
@@ -608,7 +608,7 @@ Gate 4b is the Project Plan review. It is an interactive session between the BA 
 
 **New page:** `src/pages/review/ProjectPlanReview.jsx`
 
-After Gate 4b approval, `contextGenerationChain` runs once to produce `CONTEXT.md` and `docs/adr/` entries. Then `openspecGenerationChain` runs epic by epic — one capability folder per epic in the approved project plan. The BA reviews specs one epic at a time at Gate 6.
+After Gate 5 approval, `contextGenerationChain` runs once to produce `CONTEXT.md` and `docs/adr/` entries. Then `openspecGenerationChain` runs epic by epic — one capability folder per epic in the approved project plan. The BA reviews specs one epic at a time at Gate 6.
 
 ### 7.4 Gate 6 — Spec Review Detail [v5.6 CHANGE]
 
@@ -618,9 +618,9 @@ Gate 6 is the most consequential technical gate. All code generation is downstre
 
 **What happens before Gate 6:**
 
-After Gate 4b approval, two chains run in sequence:
+After Gate 5 approval, two chains run in sequence:
 
-`contextGenerationChain` runs once after Gate 4b approval — Claude reads the chosen solution, approved brief, all engagement inputs, and the approved project plan and produces `CONTEXT.md` (domain vocabulary, key terms, architectural decisions) and `docs/adr/` entries for the client repo.
+`contextGenerationChain` runs once after Gate 5 approval — Claude reads the chosen solution, approved brief, all engagement inputs, and the approved project plan and produces `CONTEXT.md` (domain vocabulary, key terms, architectural decisions) and `docs/adr/` entries for the client repo.
 
 `openspecGenerationChain` generates specs epic by epic from the approved project plan. Each epic in `engagements.project_plan` becomes one capability folder under `openspec/changes/{engagement-id}/specs/`. The BA reviews and approves each epic's spec at Gate 6 before code generation for that epic begins. User stories become `### Requirement:` headers with `#### Scenario:` blocks in WHEN/THEN/AND syntax. Acceptance criteria become scenario steps. Files are committed to the client repo branch. The `specifications` table in Supabase stores `repo_path` and `commit_sha` — not the spec content itself.
 
@@ -639,7 +639,7 @@ After Gate 4b approval, two chains run in sequence:
 
 **Approval:** Commits final spec state to branch. Updates `specifications` table with `commit_sha` and `approved_at`. Gate 6 approval records are per-epic — one `gate_approvals` record per approved epic. After the final epic spec is approved, status advances to `code_pending` for the first epic.
 
-### 7.5 Code Generation Layer
+### 7.6 Code Generation Layer
 
 Code generation uses the Anthropic API directly with OpenSpec artifact content as context. A pre-check stage (including ESLint complexity), Fallow hook, and Gemini review loop follow.
 
@@ -700,7 +700,7 @@ When Gemini scores below threshold:
 
 `/diagnose` is available to the BA as a manual tool after Gate 7 for deep investigation of specific issues before deciding to approve or reject. It is not used in the automated loop.
 
-### 7.6 Error Recovery
+### 7.7 Error Recovery
 
 On any chain failure:
 1. `engagement.status` → `'failed'`
@@ -723,7 +723,7 @@ Any state → failed (on chain error)
 failed → [last_successful_gate state] (on BA retry)
 ```
 
-### 7.7 Human-in-the-Loop Gates [v5.1 CHANGE] [v5.4 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE]
+### 7.8 Human-in-the-Loop Gates [v5.1 CHANGE] [v5.4 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE]
 
 Eight mandatory approval gates. Status enforced server-side in every Vercel API route. Frontend only reflects state — never controls it.
 
@@ -733,14 +733,14 @@ Eight mandatory approval gates. Status enforced server-side in every Vercel API 
 | Gate 2 — Solutions Review | Claude generates solutions | Edit, reorder, remove, add notes, approve. Add supplementary inputs at gate2_review if needed; banner offers to regenerate brief and solutions with updated context; Gate 2 approval resets on regeneration. | None |
 | Gate 3 — Client Decision, Proposal and Confirmation Loop | Gate 2 approved and Document A generated | Select chosen solution (required); add context via any input method or agent prompt (optional); review and edit Document B in loop until satisfied; approve and optionally send to client | Power Automate: Document B filed to SharePoint on approval; send to client optional from BSE [v5.5] |
 | Gate 4 — Client Decision and Context | Gate 3 approved and sent | Select chosen solution from approved options (required); add supplementary context via brain-dump, transcript, or guided questions (all optional); or check no-further-input if no additional context. Advances to plan_pending on approval. | None |
-| Gate 4b — Project Plan | Gate 4 approved; status = plan_pending | Review project plan in interactive chat-like interface; iterate with Claude (no round limit); approve | None |
+| Gate 5 — Project Plan | Gate 4 approved; status = plan_pending | Review project plan in interactive chat-like interface; iterate with Claude (no round limit); approve | None |
 | Gate 6 — Spec Approval | OpenSpec files committed to client repo per epic from approved project plan | Review OpenSpec markdown; flag sections for regeneration; approve | None |
 | Gate 7 — Code Review | Review loop completes (threshold or max cycles) | Review Gemini scorecard, ESLint CC scores, build report, code diff; compare epic from project plan against generated spec and code output; approve each epic. `/diagnose` available manually. | Teams: CC 21+ pause events only |
 | Gate 8 — Output Review | A4 HTML PDFs generated | Preview client documents; approve or reject | Teams + email always |
 
 **Note:** Rollback to Gate 2 available at Gate 3 if client changes mind after Gate 3 approval. Status reverts to `gate2_review` with all original solutions intact. [v5.5]
 
-### 7.8 Output Generation Layer
+### 7.9 Output Generation Layer
 
 **Pipeline:** Claude JSON → A4 HTML template → Puppeteer (`@sparticuz/chromium`) → PDF → Microsoft Graph API → SharePoint
 
@@ -860,7 +860,7 @@ action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
                   'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
-                  'plan_approved',                 -- Gate 4b: BA approved the project plan [v5.6]
+                  'plan_approved',                 -- Gate 5: BA approved the project plan [v5.6]
                   'cc_pause_approved',             -- Gate 7: BA approved continuation after CC 21+
                   'cc_pause_rejected',             -- Gate 7: BA rejected for refactor after CC 21+
                   'manual_override'                -- Gate 8: BA confirmed manual upload after 2 failed retries [v5.2]
@@ -1506,7 +1506,7 @@ FALLOW_GATE_MIN_VERSION=2.46.0        # Minimum Fallow version for uncommitted-c
 - Wire Power Automate Gate 3 proposal send flow [v5.1]
 - Implement Gate 4 client decision screen — BA selects chosen solution from approved options (radio button); supplementary context capture via brain-dump, transcript, or guided questions (all optional); no-further-input checkbox; advances to plan_pending on approval [v5.4]
 - Implement `projectPlanChain` (interactive project planning via Claude; discovery questions + plan generation + iterations; stores approved plan in `engagements.project_plan`) [v5.6]
-- Build Gate 4b project plan review screen (`/review/:id/project-plan`) — chat-like interface, plan display in markdown and OpenSpec format, approve/iterate [v5.6]
+- Build Gate 5 project plan review screen (`/review/:id/project-plan`) — chat-like interface, plan display in markdown and OpenSpec format, approve/iterate [v5.6]
 - Implement `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve` routes [v5.6]
 - Implement `contextGenerationChain` (produces CONTEXT.md + ADRs)
 - Implement `openspecGenerationChain` (produces OpenSpec files in client repo, epic by epic)
@@ -1634,7 +1634,7 @@ Gate 1 — Brief Review
 Gate 2 — Solutions Review
 Gate 3 — Client Decision, Proposal and Confirmation Loop (NEW v5.5)
 Gate 4 — Client Decision and Context (NEW v5.4)
-Gate 4b — Project Plan (NEW v5.6)
+Gate 5 — Project Plan (NEW v5.6)
 Gate 6 — Spec Approval (was Gate 5)
 Gate 7 — Code Review (was Gate 6)
 Gate 8 — Output Review (was Gate 7)
@@ -1922,9 +1922,9 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 
 | # | Section affected | Change | Type |
 |---|---|---|---|
-| 1 | 2, 5.2, 6.2, 6.3, 7.1, 7.7, 9, 15, 16, 19 | Gate renumbering: Gates 5, 6, 7 become Gates 6, 7, 8. Gate 4b (Project Plan) inserted between Gate 4 and Gate 5. Pipeline is now eight gates. | Renumbering |
-| 2 | 7.3b (new), 6.2, 7.1, 9, 15 | Gate 4b — Project Plan added. `projectPlanChain` conducts interactive discovery, generates project plan (epics, stories, tasks) in markdown and OpenSpec format, iterates until BA approves. New API routes: plan-question, plan-update, gate5-approve. New page: ProjectPlanReview.jsx. New status: `plan_pending` (after gate4_review) and `gate5_review` (project plan review). Approved plan stored in `engagements.project_plan`. | New gate + chain |
-| 3 | 7.4 | Gate 6 (formerly Gate 5) — Spec Approval updated. Specs are now generated epic by epic from the approved project plan. Each epic becomes one capability folder. `contextGenerationChain` runs once after Gate 4b approval; `openspecGenerationChain` runs per epic. BA reviews specs one epic at a time. Gate 6 approval records are per-epic. | Gate redesign |
-| 4 | 7.5 | Gate 7 (formerly Gate 6) — Code Review updated. Epic-by-epic build loop: for each epic, code generation → pre-check → Gemini review loop → BA approval before next epic begins. Each epic has its own `gate_approvals` record. BA compares epic from project plan with generated spec and code output before approving. Full build report generated per epic. Status advances to `output_pending` only after all epics approved. | Gate redesign |
+| 1 | 2, 5.2, 6.2, 6.3, 7.1, 7.8, 9, 15, 16, 19 | Gate renumbering: Gates 5, 6, 7 become Gates 6, 7, 8. Gate 5 (Project Plan) inserted between Gate 4 and Gate 6. Pipeline is now eight gates. | Renumbering |
+| 2 | 7.5 (new), 6.2, 7.1, 9, 15 | Gate 5 — Project Plan added. `projectPlanChain` conducts interactive discovery, generates project plan (epics, stories, tasks) in markdown and OpenSpec format, iterates until BA approves. New API routes: plan-question, plan-update, gate5-approve. New page: ProjectPlanReview.jsx. New status: `plan_pending` (after gate4_review) and `gate5_review` (project plan review). Approved plan stored in `engagements.project_plan`. | New gate + chain |
+| 3 | 7.4 | Gate 6 (formerly Gate 5) — Spec Approval updated. Specs are now generated epic by epic from the approved project plan. Each epic becomes one capability folder. `contextGenerationChain` runs once after Gate 5 approval; `openspecGenerationChain` runs per epic. BA reviews specs one epic at a time. Gate 6 approval records are per-epic. | Gate redesign |
+| 4 | 7.6 | Gate 7 (formerly Gate 6) — Code Review updated. Epic-by-epic build loop: for each epic, code generation → pre-check → Gemini review loop → BA approval before next epic begins. Each epic has its own `gate_approvals` record. BA compares epic from project plan with generated spec and code output before approving. Full build report generated per epic. Status advances to `output_pending` only after all epics approved. | Gate redesign |
 | 5 | 9 (engagements) | `project_plan jsonb`, `plan_conversation jsonb`, `current_epic_index int default 0` added to `engagements`. Status check constraint updated: `plan_pending` and `gate5_review` added; `gate5_review`→`gate6_review`, `gate6_review`→`gate7_review`, `gate7_review`→`gate8_review`. | Schema addition |
-| 6 | 9 (gate_approvals) | `gate_number` check extended from (1–7) to (1–8). `plan_approved` added to `action` constraint — used when BA approves the project plan at Gate 4b. cc_pause and manual_override gate comments updated from Gate 6/7 to Gate 7/8. | Schema change |
+| 6 | 9 (gate_approvals) | `gate_number` check extended from (1–7) to (1–8). `plan_approved` added to `action` constraint — used when BA approves the project plan at Gate 5. cc_pause and manual_override gate comments updated from Gate 6/7 to Gate 7/8. | Schema change |

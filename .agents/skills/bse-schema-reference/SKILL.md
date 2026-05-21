@@ -77,14 +77,14 @@ created_at      timestamptz default now()
 ```sql
 id              uuid primary key default gen_random_uuid()
 engagement_id   uuid references engagements(id) on delete cascade
-gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6, 7, 8))  -- [v5.6] extended to 8; gate 5 = Gate 4b
+gate_number     int check (gate_number in (1, 2, 3, 4, 5, 6, 7, 8))  -- [v5.6] extended to 8; gate 5 = Gate 5 (Project Plan)
 approved_by     uuid references auth.users(id)
 approved_at     timestamptz default now()
 action          text check (action in (
                   'approved', 'rejected', 'edited_and_approved',
                   'sent',                          -- Gate 3: proposal sent to client
                   'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
-                  'plan_approved',                 -- Gate 4b: BA approved the project plan [v5.6]
+                  'plan_approved',                 -- Gate 5: BA approved the project plan [v5.6]
                   'cc_pause_approved',             -- Gate 7: BA approved continuation after CC 21+
                   'cc_pause_rejected',             -- Gate 7: BA rejected for refactor after CC 21+
                   'manual_override'                -- Gate 8: BA confirmed manual upload after 2 failed retries [v5.2]
@@ -97,8 +97,8 @@ edits_made      jsonb
 - `action` adds `'voided'` (Gate 2: contextual re-injection)
 
 **v5.6 changes:**
-- `gate_number` check extended to 1–8; gate 5 = Gate 4b (Project Plan)
-- `action` adds `'plan_approved'` (Gate 4b: BA approved project plan)
+- `gate_number` check extended to 1–8; gate 5 = Gate 5 (Project Plan)
+- `action` adds `'plan_approved'` (Gate 5: BA approved project plan)
 - `cc_pause_approved`/`cc_pause_rejected` comments updated to Gate 7 (was Gate 6)
 - `manual_override` added (Gate 8: manual SharePoint upload override [v5.2])
 

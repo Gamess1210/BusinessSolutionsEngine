@@ -9,10 +9,10 @@ Gate 1  — Brief Review
 Gate 2  — Solutions Review
 Gate 3  — Client Decision, Proposal and Confirmation Loop
 Gate 4  — Client Decision and Context
-Gate 4b — Project Plan (NEW v5.6)
-Gate 6  — Spec Approval (was Gate 5)
-Gate 7  — Code Review (was Gate 6)
-Gate 8  — Output Review (was Gate 7)
+Gate 5  — Project Plan (NEW v5.6)
+Gate 6  — Spec Approval
+Gate 7  — Code Review
+Gate 8  — Output Review
 ```
 
 ---

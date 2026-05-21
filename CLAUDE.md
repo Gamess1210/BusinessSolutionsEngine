@@ -27,13 +27,13 @@ All config is accessed via `import.meta.env.VITE_*`.
 
 ## Architecture Overview
 
-**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through a seven-gate review pipeline.
+**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through an eight-gate review pipeline.
 
 ### Key Concepts
 
 **Engagement** — the central entity. Has `status`, `analysis_mode` (quick/deep), and `industry` (financial_services/general).
 
-Status state machine: `captured → brief_pending → gate1_review → solutions_pending → gate2_review → proposal_pending → gate3_review → gate4_review → spec_pending → gate5_review → code_pending → code_review → gate6_review → output_pending → gate7_review → complete`. Any state → `failed` on chain error. `failed` → last successful gate state on BA retry.
+Status state machine: `captured → brief_pending → gate1_review → solutions_pending → gate2_review → proposal_pending → gate3_review → gate4_review → plan_pending → gate5_review → spec_pending → gate6_review → code_pending → code_review → gate7_review → output_pending → gate8_review → complete`. Any state → `failed` on chain error. `failed` → last successful gate state on BA retry.
 
 **Capture modes** (how client input enters the system):
 - **Guided** — 14 structured discovery questions, one at a time
@@ -44,14 +44,15 @@ Status state machine: `captured → brief_pending → gate1_review → solutions
 - **Quick Ideas** — Single Claude call, 3 solution options, <60s
 - **Deep Analysis** — Two sequential Claude calls, full brief + 5 solutions with ROI/risk, ~5min
 
-**Seven-gate pipeline** (from `openspec/config.yaml`):
+**Eight-gate pipeline** (from `openspec/config.yaml`):
 1. Brief Review — human reviews AI-structured problem brief
 2. Solutions Review — human reviews generated solution options
 3. Client Decision, Proposal and Confirmation Loop — BA selects chosen solution, generates and refines Document B
 4. Client Decision and Context — BA records chosen solution and captures post-meeting context
-5. Spec Approval — OpenSpec files written to client repo
-6. Code Review — Gemini scorecard + ESLint complexity scores
-7. Output Review — final client documents
+5. Project Plan — BA converses with Claude to produce a structured project plan
+6. Spec Approval — OpenSpec files written to client repo
+7. Code Review — Gemini scorecard + ESLint complexity scores
+8. Output Review — final client documents
 
 **Client Intake** — public token-based form at `/intake/:token`. Internal user generates a UUID token via Dashboard; client fills the form without auth; data lands in `engagement_inputs` with `intake_token`.
 
@@ -81,7 +82,7 @@ src/
   pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2)
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
-  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, proposalGeneration, proposalEdit, contextGeneration, openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
+  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, proposalGeneration, proposalEdit, projectPlan, contextGeneration, openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
   lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
   App.jsx         # Routes + ProtectedRoute
@@ -151,14 +152,15 @@ Chains to implement (in order):
 ### Gate Enforcement
 - Gate state is always verified server-side in Vercel API routes (`/api/pipeline/...`)
 - Frontend never controls pipeline progression — it only reflects state from Supabase
-- Seven mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
+- Eight mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
   - Gate 1: Brief Review
   - Gate 2: Solutions Review
   - Gate 3: Business Proposal (client-facing PDF, sent from app to client_email)
   - Gate 4: Client Decision and Context (BA selects chosen solution; optional supplementary context)
-  - Gate 5: Spec Approval (OpenSpec files committed to client repo)
-  - Gate 6: Code Review (Gemini scorecard + ESLint CC scores per file)
-  - Gate 7: Output Review (final client documents)
+  - Gate 5: Project Plan (BA and Claude build structured project plan)
+  - Gate 6: Spec Approval (OpenSpec files committed to client repo)
+  - Gate 7: Code Review (Gemini scorecard + ESLint CC scores per file)
+  - Gate 8: Output Review (final client documents)
 
 ### ESLint Complexity — Pre-check Behaviour
 - CC 1–10: pass
@@ -189,9 +191,9 @@ try {
 - Five documents per engagement:
   - Document A: Solution Options Summary PDF (after Gate 2, all approved options, not client-branded)
   - Document B: Business Proposal PDF (Gate 3, client-facing, Comotion-branded, chosen solution only)
-  - Final Client Brief PDF (Gate 7, client-facing)
-  - Review Loop Report PDF (Gate 7, internal only, never sent to clients)
-  - Project Summary PDF (Gate 7, internal only, full engagement audit trail, never sent to clients)
+  - Final Client Brief PDF (Gate 8, client-facing)
+  - Review Loop Report PDF (Gate 8, internal only, never sent to clients)
+  - Project Summary PDF (Gate 8, internal only, full engagement audit trail, never sent to clients)
 
 ### Schema Rules
 - Never store spec content in Supabase — specs live in the client GitHub repo
