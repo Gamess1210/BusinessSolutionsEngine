@@ -28,15 +28,37 @@ async function parseJsonWithFallback(message) {
   }
 }
 
+function extractBriefText(b) {
+  return {
+    brief_executive_summary: b.executive_summary ?? '',
+    brief_current_process: b.current_process_detail ?? '',
+    brief_root_cause_analysis: b.root_cause_analysis ?? '',
+    brief_business_impact: b.business_impact ?? '',
+    brief_compliance: b.compliance_and_regulatory ?? '',
+    brief_constraints: b.constraints_and_dependencies ?? '',
+    brief_recommended_focus: b.recommended_focus_areas ?? '',
+  }
+}
+
+function extractBriefCollections(b) {
+  return {
+    brief_pain_points: JSON.stringify(b.pain_points ?? [], null, 2),
+    brief_stakeholder_analysis: JSON.stringify(b.stakeholder_analysis ?? [], null, 2),
+    brief_success_criteria: JSON.stringify(b.success_criteria ?? [], null, 2),
+  }
+}
+
 function buildPromptInputs({ engagement, chosenSolution, context }) {
+  const b = engagement.structured_brief ?? {}
   return {
     client_name: engagement.client_name ?? '',
     organisation: engagement.organisation ?? '',
     date: new Date().toISOString().slice(0, 10),
     schema: DOCUMENT_B_SCHEMA,
-    brief_json: JSON.stringify(engagement.structured_brief ?? {}, null, 2),
     chosen_solution_json: JSON.stringify(chosenSolution ?? {}, null, 2),
     context_text: context ? JSON.stringify(context) : 'None',
+    ...extractBriefText(b),
+    ...extractBriefCollections(b),
   }
 }
 
