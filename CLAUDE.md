@@ -11,6 +11,11 @@ npm run preview   # Serve dist/ locally
 npm run lint      # Run ESLint (complexity rule enforced, errors at CC > 10)
 ```
 
+To test API routes locally (requires Vercel CLI):
+```powershell
+$env:PORT = "3001"; vercel dev
+```
+
 No test framework is configured yet.
 
 ## Environment Variables
@@ -40,7 +45,7 @@ Status state machine: `captured → brief_pending → gate1_review → solutions
 - **Brain-dump** — Unstructured notes; Claude restructures
 - **Transcript** — Paste a Fireflies meeting transcript; Claude extracts context
 
-**Analysis modes**:
+**Analysis modes** (`analysis_mode` defaults to `'deep'` — Quick Ideas is opt-in):
 - **Quick Ideas** — Single Claude call, 3 solution options, <60s
 - **Deep Analysis** — Two sequential Claude calls, full brief + 5 solutions with ROI/risk, ~5min
 
@@ -79,14 +84,23 @@ RLS: users see only their own engagements (`team_member_id = auth.uid()`). Intak
 ```
 src/
   pages/          # Login, Dashboard, NewEngagement, EngagementDetail, IntakeForm
-  pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2)
+  pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2), ProposalReview (Gate 3),
+                  # ClientDecisionReview (Gate 4), ProjectPlanReview (Gate 5),
+                  # SpecReview (Gate 6), CodeReview (Gate 7), OutputsReview (Gate 8)
+                  # Part1SolutionSelect, Part2ContextCapture, Part3ProposalLoop (Gate 3 sub-screens)
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
-  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, proposalGeneration, proposalEdit, projectPlan, contextGeneration, openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
+  lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, documentAGeneration,
+                  # proposalGeneration, proposalEdit, projectPlan, contextGeneration,
+                  # openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
   lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
   App.jsx         # Routes + ProtectedRoute
-api/pipeline/     # Vercel serverless routes: consolidate, quick-ideas, deep-analysis, gate2-approve
+api/pipeline/     # Vercel serverless routes:
+                  #   consolidate, quick-ideas, deep-analysis, gate2-approve, regenerate-brief-and-solutions
+                  #   gate3-select-solution, gate3-generate, gate3-edit, gate3-send, gate3-approve, gate3-reset-solution
+                  #   gate4-approve, gate4-reject
+                  #   plan-message, gate5-approve
 openspec/         # Spec-driven workflow config and change tracking
 ```
 
@@ -94,7 +108,7 @@ openspec/         # Spec-driven workflow config and change tracking
 
 **Language**: JavaScript/JSX (not TypeScript).
 
-**Styling**: Tailwind CSS only. Brand palette defined in `tailwind.config.js`:
+**Styling**: Tailwind CSS v3 only — **do not upgrade to v4, it breaks Vercel deployment**. Brand palette defined in `tailwind.config.js`:
 - `navy` (#1A3B66) — primary headers/buttons
 - `cgreen` (#8CC240) — success/accent
 - `cblue` (#4DBFED) — info
@@ -140,14 +154,17 @@ Chains to implement (in order):
 1. `consolidationChain` — merges all engagement inputs into structured brief (Claude)
 2. `quickIdeasChain` — generates 3 solution options (Claude)
 3. `deepAnalysisChain` — two-call deep analysis, 5 solutions (Claude)
-4. `proposalGenerationChain` — generates A4 HTML business proposal PDF (Claude)
-5. `contextGenerationChain` — extracts domain vocabulary → CONTEXT.md (Claude)
-6. `openspecGenerationChain` — generates OpenSpec files in client repo (Claude)
-7. `codeGenerationChain` — generates code from OpenSpec (Claude)
-8. `codeFixChain` — applies targeted fixes from Gemini review (Claude)
-9. `codeReviewChain` — scores code on 5 dimensions (Gemini)
-10. `reviewLoopChain` — orchestrates pre-check → Gemini review → fix cycles (Both)
-11. `outputGenerationChain` — generates final A4 HTML documents (Claude)
+4. `documentAGenerationChain` — Solution Options Summary PDF after Gate 2 approval (Claude)
+5. `proposalGenerationChain` — generates A4 HTML business proposal PDF for chosen solution (Claude)
+6. `proposalEditChain` — targeted BA-instructed edits to Document B without full rewrite (Claude)
+7. `projectPlanChain` — interactive discovery + project plan generation + iteration loop (Claude)
+8. `contextGenerationChain` — extracts domain vocabulary → CONTEXT.md (Claude)
+9. `openspecGenerationChain` — generates OpenSpec files in client repo, epic by epic (Claude)
+10. `codeGenerationChain` — generates code from OpenSpec (Claude)
+11. `codeFixChain` — applies targeted fixes from Gemini review (Claude)
+12. `codeReviewChain` — scores code on 5 dimensions (Gemini)
+13. `reviewLoopChain` — orchestrates pre-check → Gemini review → fix cycles (Both)
+14. `outputGenerationChain` — generates final A4 HTML documents (Claude)
 
 ### Gate Enforcement
 - Gate state is always verified server-side in Vercel API routes (`/api/pipeline/...`)
@@ -211,6 +228,6 @@ Located in `.agents/skills/` — reference before implementing related functiona
 - `/caveman` — token-efficient generation (~75% reduction, full accuracy preserved)
 - `/tdd` — red-green-refactor per user story
 - `/zoom-out` — re-read codebase for context before applying fixes
-- `/diagnose` — manual BA tool after Gate 5 only, not used in automated loop
+- `/diagnose` — manual BA tool after Gate 7 only, not used in automated loop
 - `/setup-matt-pocock-skills` — must run before `/to-issues`
 - `/to-issues` — converts epics to GitHub issues
