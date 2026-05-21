@@ -80,6 +80,12 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 
 ---
 
+## 🔍 Investigate Before Acting
+
+- [ ] **Prompt file architecture review** — Currently prompts exist in three places: Section 10 of BSE Instructions, src/lib/prompts/*.js files, and bse-prompt-library SKILL.md. This creates drift risk when prompts are updated. Before acting, investigate: (1) whether src/lib/prompts/ should become the single source of truth, (2) whether Section 10 of BSE Instructions should become a reference index only (file locations + purpose, not full text), (3) whether the bse-prompt-library skill should instruct Claude Code to read the live .js file rather than containing a copied version. Risk to assess: Claude Code must be able to read prompt files reliably before this is safe to do. Do not restructure until the investigation is complete and the approach is agreed.
+
+---
+
 ## ✅ Completed This Session (21 May 2026)
 
 - [x] BSE Instructions updated to v5.6 (8-gate pipeline, Gate 5 Project Plan)
