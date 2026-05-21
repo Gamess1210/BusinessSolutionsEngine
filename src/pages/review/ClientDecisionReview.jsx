@@ -257,7 +257,7 @@ export default function ClientDecisionReview() {
     setSubmitError(null)
     try {
       await postApi('/api/pipeline/gate4-approve', { engagementId: id, contextInputs, noFurtherInput })
-      navigate(`/engagements/${id}`)
+      navigate(`/review/${id}/project-plan`)
     } catch (err) {
       setSubmitError(err.message)
       setSubmitting(false)

@@ -7,6 +7,7 @@ import BriefReview from './pages/review/BriefReview'
 import SolutionsReview from './pages/review/SolutionsReview'
 import ProposalReview from './pages/review/ProposalReview'
 import ClientDecisionReview from './pages/review/ClientDecisionReview'
+import ProjectPlanReview from './pages/review/ProjectPlanReview'
 import SpecReview from './pages/review/SpecReview'
 import CodeReview from './pages/review/CodeReview'
 import OutputsReview from './pages/review/OutputsReview'
@@ -45,6 +46,7 @@ function App() {
         <Route path="review/:id/solutions" element={<SolutionsReview />} />
         <Route path="review/:id/proposal" element={<ProposalReview />} />
         <Route path="review/:id/client-decision" element={<ClientDecisionReview />} />
+        <Route path="review/:id/project-plan" element={<ProjectPlanReview />} />
         <Route path="review/:id/spec" element={<SpecReview />} />
         <Route path="review/:id/code" element={<CodeReview />} />
         <Route path="review/:id/outputs" element={<OutputsReview />} />

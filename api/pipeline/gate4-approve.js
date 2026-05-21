@@ -48,7 +48,7 @@ async function writeSupplementaryInputs(supabaseAdmin, engagementId, contextInpu
 async function finalizeApproval(supabaseAdmin, engagementId, noFurtherInput) {
   const { error: updateError } = await supabaseAdmin
     .from('engagements')
-    .update({ status: 'spec_pending', gate4_no_further_input: !!noFurtherInput })
+    .update({ status: 'plan_pending', gate4_no_further_input: !!noFurtherInput })
     .eq('id', engagementId)
   if (updateError) throw updateError
 
