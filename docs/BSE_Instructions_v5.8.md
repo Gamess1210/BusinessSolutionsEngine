@@ -343,7 +343,7 @@ Pin these versions explicitly in `package.json`. Do not use `latest` — LangCha
 
 LangChain is used for all multi-step AI sequences. Direct AI API calls are not permitted for any pipeline step. Simple single-call utility functions (e.g. a one-off clarifying question) may call Claude directly but must be clearly labelled with a comment: `// NON-PIPELINE: direct AI call`.
 
-### 6.2 Chains to Implement [v5.1 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE]
+### 6.2 Chains to Implement [v5.1 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE] [v5.8 CHANGE]
 
 `proposalGenerationChain` is added as a new chain between `deepAnalysisChain` and `contextGenerationChain`. Gate numbering updated throughout.
 
@@ -534,7 +534,7 @@ ESLint complexity scoring runs independently in pre-check and is displayed separ
 - `/review/[id]/solutions` — Gate 2 review. Includes supplementary context panel — capture input tabs remain accessible at gate2_review status to allow the BA to add new inputs before Gate 3. A banner prompts re-run of consolidationChain and solution generation if new input is added.
 - `/review/[id]/proposal` — Gate 3 review. BA selects chosen solution, adds supplementary context, reviews and edits Document B in a loop until satisfied, then approves. [v5.5 CHANGE]
 - `/review/[id]/client-decision` — Gate 4 client decision. BA selects chosen solution from approved options (required, radio button selection), adds supplementary context via brain-dump, transcript, or guided questions (all optional), or checks no-further-input. Advances to plan_pending on approval. [v5.4 NEW]
-- `/review/[id]/project-plan` — Gate 5 project plan review. Chat-like interface. BA reviews and iterates on the project plan with Claude. Approves when satisfied. [v5.6 NEW]
+- `/review/[id]/project-plan` — Gate 5 project plan review. Three-phase stepped interface: Phase 1 (build instructions review), Phase 2 (epic discovery chat), Phase 3 (per-epic story approval). [v5.6 NEW] [v5.7 REDESIGN]
 - `/review/[id]/repo-setup` — Repository Setup. BA enters GitHub repo, validates access, confirms skill files, triggers scaffold commit to feature branch. Only accessible when status = `repo_setup`. [v5.8 NEW]
 - `/review/[id]/spec` — Gate 6 spec review. Renders OpenSpec markdown files. Sections flaggable for regeneration.
 - `/review/[id]/code` — Gate 7 code review. Gemini scorecard, ESLint CC scores per file, per-cycle review history, diff view, escalation flag. [v5.1 CHANGE]
@@ -582,7 +582,7 @@ Gate 3 is the Client Decision, Proposal and Confirmation Loop. It combines three
 
 `proposalGenerationChain` input: chosen solution + all `engagement_inputs` + `engagements.structured_brief` (not all solutions — only the chosen one)
 
-### 7.5 Gate 5 — Project Plan [v5.6 NEW] [v5.7 REDESIGN]
+### 7.5 Gate 5 — Project Plan [v5.6 NEW] [v5.7 REDESIGN] [v5.8 CHANGE]
 
 Gate 5 is the Project Plan review. It is a three-phase process conducted inside the BSE at `/review/:id/project-plan`. The session begins immediately after Gate 4 approval (status = `plan_pending`, `current_plan_phase = 1`).
 
@@ -648,7 +648,7 @@ On approval of each epic: a `gate_approvals` record is inserted (`gate_number = 
 
 After all epics are approved, status advances to `repo_setup`. The BA connects the client GitHub repo, validates `.gitignore`, confirms skill files are uploaded, and triggers the scaffold commit at `/review/:id/repo-setup`. After the scaffold commit, status advances automatically to `spec_pending`, where `contextGenerationChain` runs once to produce `CONTEXT.md` and `docs/adr/` entries. Then `openspecGenerationChain` runs epic by epic — one capability folder per epic in the approved project plan. The BA reviews specs one epic at a time at Gate 6. [v5.8 CHANGE]
 
-### 7.4 Gate 6 — Spec Review Detail [v5.6 CHANGE]
+### 7.4 Gate 6 — Spec Review Detail [v5.6 CHANGE] [v5.8 CHANGE]
 
 Gate 6 reviews OpenSpec files committed to the client repo, not a JSON object stored in Supabase. The BA approves the exact files Claude Code reads. There is no translation step between what is approved and what drives code generation.
 
@@ -738,7 +738,7 @@ When Gemini scores below threshold:
 
 `/diagnose` is available to the BA as a manual tool after Gate 7 for deep investigation of specific issues before deciding to approve or reject. It is not used in the automated loop.
 
-### 7.7 Error Recovery
+### 7.7 Error Recovery [v5.8 CHANGE]
 
 On any chain failure:
 1. `engagement.status` → `'failed'`
@@ -765,7 +765,7 @@ failed → [last_successful_gate state] (on BA retry)
 
 **Note:** `repo_setup` is a BA-action status — no chain runs. It sits between `gate5_review` and `spec_pending`. The BA connects the GitHub repo, confirms the Skills Registry, and triggers the scaffold commit. `spec_pending` is the automatic chain phase — `contextGenerationChain` and `openspecGenerationChain` fire immediately on transition to `spec_pending`. [v5.8 NEW]
 
-### 7.8 Human-in-the-Loop Gates [v5.1 CHANGE] [v5.4 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE]
+### 7.8 Human-in-the-Loop Gates [v5.1 CHANGE] [v5.4 CHANGE] [v5.5 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE]
 
 Eight mandatory approval gates. Status enforced server-side in every Vercel API route. Frontend only reflects state — never controls it.
 
@@ -775,7 +775,7 @@ Eight mandatory approval gates. Status enforced server-side in every Vercel API 
 | Gate 2 — Solutions Review | Claude generates solutions | Edit, reorder, remove, add notes, approve. Add supplementary inputs at gate2_review if needed; banner offers to regenerate brief and solutions with updated context; Gate 2 approval resets on regeneration. | None |
 | Gate 3 — Client Decision, Proposal and Confirmation Loop | Gate 2 approved and Document A generated | Select chosen solution (required); add context via any input method or agent prompt (optional); review and edit Document B in loop until satisfied; approve and optionally send to client | Power Automate: Document B filed to SharePoint on approval; send to client optional from BSE [v5.5] |
 | Gate 4 — Client Decision and Context | Gate 3 approved and sent | Select chosen solution from approved options (required); add supplementary context via brain-dump, transcript, or guided questions (all optional); or check no-further-input if no additional context. Advances to plan_pending on approval. | None |
-| Gate 5 — Project Plan | Gate 4 approved; status = plan_pending | Review project plan in interactive chat-like interface; iterate with Claude (no round limit); approve | None |
+| Gate 5 — Project Plan | Gate 4 approved; status = plan_pending | Three-phase process: Phase 1 — review and approve CLIENT_BUILD_INSTRUCTIONS.md; Phase 2 — iterative chat to define and approve epic list; Phase 3 — per-epic story and task review and approval. All three phases at `/review/:id/project-plan`. On final epic approval, status advances to `repo_setup`. [v5.7 REDESIGN] | None |
 | Gate 6 — Spec Approval | OpenSpec files committed to client repo per epic from approved project plan | Review OpenSpec markdown; flag sections for regeneration; approve | None |
 | Gate 7 — Code Review | Review loop completes (threshold or max cycles) | Review Gemini scorecard, ESLint CC scores, build report, code diff; compare epic from project plan against generated spec and code output; approve each epic. `/diagnose` available manually. | Teams: CC 21+ pause events only |
 | Gate 8 — Output Review | A4 HTML PDFs generated | Preview client documents; approve or reject | Teams + email always |
@@ -951,7 +951,7 @@ name         text not null unique  -- 'bse-prompt-library', 'bse-schema-referenc
 folder_path  text not null         -- path: .agents/skills/{name}/SKILL.md
 content      text                  -- null until BA uploads; null blocks repo_setup
 updated_by   uuid references auth.users(id)
-updated_at   timestamptz
+updated_at   timestamptz default now()
 created_at   timestamptz default now()
 ```
 
@@ -1592,9 +1592,10 @@ FALLOW_GATE_MIN_VERSION=2.46.0        # Minimum Fallow version for uncommitted-c
 - Build Gate 3 Client Decision, Proposal and Confirmation Loop screen — BA selects chosen solution, adds context, reviews/edits Document B in loop until satisfied, approve and optionally send to client [v5.5]
 - Wire Power Automate Gate 3 proposal send flow [v5.1]
 - Implement Gate 4 client decision screen — BA selects chosen solution from approved options (radio button); supplementary context capture via brain-dump, transcript, or guided questions (all optional); no-further-input checkbox; advances to plan_pending on approval [v5.4]
-- Implement `projectPlanChain` (interactive project planning via Claude; discovery questions + plan generation + iterations; stores approved plan in `engagements.project_plan`) [v5.6]
-- Build Gate 5 project plan review screen (`/review/:id/project-plan`) — chat-like interface, plan display in markdown and OpenSpec format, approve/iterate [v5.6]
-- Implement `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve` routes [v5.6]
+- Implement `buildInstructionsChain` (generates CLIENT_BUILD_INSTRUCTIONS.md from structured_brief, chosen_solution, engagement_inputs, industry — Phase 1 of Gate 5) [v5.7]
+- Implement `projectPlanChain` (three-phase orchestrator: Phase 1 build instructions, Phase 2 epic discovery, Phase 3 per-epic story/task generation; stores approved plan in `engagements.project_plan`) [v5.6] [v5.7 REDESIGN]
+- Build Gate 5 project plan review screen (`/review/:id/project-plan`) — three-phase stepped interface; phase indicator (1/2/3); Phase 1: build instructions review; Phase 2: epic discovery chat; Phase 3: per-epic story approval [v5.6] [v5.7 REDESIGN]
+- Implement six Gate 5 API routes [v5.7 — replace v5.6 routes]: `plan-build-instructions`, `gate5-approve-instructions`, `plan-discover-epics`, `gate5-approve-epics`, `plan-generate-epic-stories`, `gate5-approve-epic` (final: advances status to `repo_setup`)
 - Implement `/api/pipeline/repo-validate.js` — validates GitHub repo access, checks `.gitignore` for `.agents/`, returns `repoName`, `defaultBranch`, `proposedBranch`, `gitignoreOk`; handles `action: 'fix-gitignore'` to append `.agents/` via GitHub Contents API; writes `github_repo` and `eslint_config_exists` to `engagements` on successful validation [v5.8]
 - Implement `/api/pipeline/repo-setup.js` — scaffold-only commit: CLAUDE.md (template fill), five skill files from `skills` table, `openspec/config.yaml`, `openspec/changes/{id}/.openspec.yaml`, `openspec/changes/{id}/proposal.md`, `openspec/changes/{id}/tasks.md`, conditional `eslint.config.js`; uses GitHub Git Data API for atomic branch creation + single commit; advances `status` to `spec_pending` on success; no chains called [v5.8]
 - Implement `/api/settings/skills-update.js` — upserts skill content by `skillName`; validates skill name exists in `skills` table; returns updated skill record [v5.8]
@@ -1922,10 +1923,10 @@ Create these six Skills before writing any code.
 All prompts from Section 10 verbatim. Include all JSON schemas. Note which prompts are pipeline (LangChain) vs non-pipeline (direct call). Include prompts 10.5 (Business Proposal), 10.6 (CONTEXT.md), 10.7 (OpenSpec), and 10.11 (Proposal Edit). Note that prompt 10.5 now generates for a single chosen solution (not all solutions) and takes `chosen_solution`, `additional_context`, and `brief` as inputs. Note that prompt 10.8 (Code Generation) includes the CC < 10 per function instruction.
 
 **Skill 2 — Supabase Schema Reference**
-Full table definitions from Section 9 including all new tables and extended columns. Include RLS policies. Note that `specifications` uses `repo_path` + `commit_sha` — not `spec_content` JSONB. Note new columns: `client_email` on `engagements`; `sharepoint_proposal_url` on `engagements`; `eslint_cc_report` and `cc_pause_occurred` on `code_reviews`; `cc_pauses` on `review_loop_reports`; `chosen_solution` and `gate4_no_further_input` on `engagements` [v5.4]; `chosen_solution_context`, `gate3_rollback_available`, and `sharepoint_solution_options_url` on `engagements` [v5.5]; `analysis_mode` default changed to `'deep'` [v5.5]; `project_plan`, `plan_conversation`, and `current_epic_index` on `engagements` [v5.6]. Note that `gate_approvals.gate_number` now covers 1–8 and `action` includes `'sent'`, `'plan_approved'`, `'cc_pause_approved'`, `'cc_pause_rejected'`. Refer to this before writing any database query.
+Full table definitions from Section 9 including all new tables and extended columns. Include RLS policies. Note that `specifications` uses `repo_path` + `commit_sha` — not `spec_content` JSONB. Note new columns: `client_email` on `engagements`; `sharepoint_proposal_url` on `engagements`; `eslint_cc_report` and `cc_pause_occurred` on `code_reviews`; `cc_pauses` on `review_loop_reports`; `chosen_solution` and `gate4_no_further_input` on `engagements` [v5.4]; `chosen_solution_context`, `gate3_rollback_available`, and `sharepoint_solution_options_url` on `engagements` [v5.5]; `analysis_mode` default changed to `'deep'` [v5.5]; `project_plan`, `plan_conversation`, and `current_epic_index` on `engagements` [v5.6]; `build_instructions`, `approved_epics`, and `current_plan_phase` on `engagements` [v5.7]; `github_repo` and `eslint_config_exists` on `engagements` [v5.8]; `repo_setup` added to `status` constraint [v5.8]. New `skills` table (five seeded rows, null content blocks repo_setup) [v5.8]. Note that `gate_approvals.gate_number` now covers 1–8 and `action` includes `'sent'`, `'plan_approved'`, `'instructions_approved'`, `'epics_approved'`, `'epic_approved'`, `'cc_pause_approved'`, `'cc_pause_rejected'`. Refer to this before writing any database query.
 
 **Skill 3 — LangChain Chain Patterns**
-LangChain 0.3.x patterns for Claude (`@langchain/anthropic`) and Gemini (`@langchain/google-genai`). Chain composition pattern. Input/output typing. Error handling. Retry logic. Model separation rule. Include `proposalGenerationChain` pattern (now takes chosen solution + additional context + brief). Include `proposalEditChain` pattern (targeted edits only — does not rewrite). Include `projectPlanChain` pattern (interactive discovery questions + plan generation + iteration loop). Include the ESLint pre-check stage pattern with CC severity classification. Include the CC 21+ pause/resume pattern. Include the `openspec archive` step. Reference before implementing any chain.
+LangChain 0.3.x patterns for Claude (`@langchain/anthropic`) and Gemini (`@langchain/google-genai`). Chain composition pattern. Input/output typing. Error handling. Retry logic. Model separation rule. Include `proposalGenerationChain` pattern (now takes chosen solution + additional context + brief). Include `proposalEditChain` pattern (targeted edits only — does not rewrite). Include `buildInstructionsChain` pattern (Phase 1 — generates CLIENT_BUILD_INSTRUCTIONS.md from structured_brief, chosen_solution, engagement_inputs, industry) [v5.7]. Include `projectPlanChain` pattern (three-phase: Phase 1 build instructions, Phase 2 epic discovery via iterative chat, Phase 3 per-epic story/task generation) [v5.7 REDESIGN]. Include the ESLint pre-check stage pattern with CC severity classification. Include the CC 21+ pause/resume pattern. Include the `openspec archive` step. Reference before implementing any chain.
 
 **Skill 4 — Microsoft Graph API + Power Automate Cheat Sheet**
 Graph API endpoints (file upload, folder creation including `_internal/` subfolder). MSAL token acquisition snippet (`@azure/msal-node`). Power Automate HTTP trigger invocation from Node.js. All seven flows listed in Section 12 with their trigger conditions. Common error codes. Note the new proposal send flow and CC pause notification flow.
@@ -2053,7 +2054,7 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 |---|---|---|---|
 | 1 | 2, 5.2, 6.2, 6.3, 7.1, 7.8, 9, 15, 16, 19 | Gate renumbering: Gates 5, 6, 7 become Gates 6, 7, 8. Gate 5 (Project Plan) inserted between Gate 4 and Gate 6. Pipeline is now eight gates. | Renumbering |
 | 2 | 7.5 (new), 6.2, 7.1, 9, 15 | Gate 5 — Project Plan added. `projectPlanChain` conducts interactive discovery, generates project plan (epics, stories, tasks) in markdown and OpenSpec format, iterates until BA approves. New API routes: plan-question, plan-update, gate5-approve. New page: ProjectPlanReview.jsx. New status: `plan_pending` (after gate4_review) and `gate5_review` (project plan review). Approved plan stored in `engagements.project_plan`. | New gate + chain |
-| 3 | 7.4 | Gate 6 (formerly Gate 5) — Spec Approval updated. Specs are now generated epic by epic from the approved project plan. Each epic becomes one capability folder. `contextGenerationChain` runs once after Gate 5 approval; `openspecGenerationChain` runs per epic. BA reviews specs one epic at a time. Gate 6 approval records are per-epic. | Gate redesign |
+| 3 | 7.4 | Gate 6 (formerly Gate 5) — Spec Approval updated. Specs are now generated epic by epic from the approved project plan. Each epic becomes one capability folder. `contextGenerationChain` runs once after Gate 5 approval; `openspecGenerationChain` runs per epic. BA reviews specs one epic at a time. Gate 6 approval records are per-epic. **Note: as of v5.8, chain generation happens during `spec_pending` (after Repository Setup), not immediately after Gate 5 approval.** | Gate redesign |
 | 4 | 7.6 | Gate 7 (formerly Gate 6) — Code Review updated. Epic-by-epic build loop: for each epic, code generation → pre-check → Gemini review loop → BA approval before next epic begins. Each epic has its own `gate_approvals` record. BA compares epic from project plan with generated spec and code output before approving. Full build report generated per epic. Status advances to `output_pending` only after all epics approved. | Gate redesign |
 | 5 | 9 (engagements) | `project_plan jsonb`, `plan_conversation jsonb`, `current_epic_index int default 0` added to `engagements`. Status check constraint updated: `plan_pending` and `gate5_review` added; `gate5_review`→`gate6_review`, `gate6_review`→`gate7_review`, `gate7_review`→`gate8_review`. | Schema addition |
 | 6 | 9 (gate_approvals) | `gate_number` check extended from (1–7) to (1–8). `plan_approved` added to `action` constraint — used when BA approves the project plan at Gate 5. cc_pause and manual_override gate comments updated from Gate 6/7 to Gate 7/8. | Schema change |
