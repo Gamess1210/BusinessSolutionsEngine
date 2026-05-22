@@ -9,7 +9,7 @@
 
 ## 2. gate5-approve.js Update
 
-- [ ] 2.1 Update `api/pipeline/gate5-approve.js` to set `engagements.status = 'repo_setup'` (currently sets `spec_pending`)
+- [ ] 2.1 Update `api/pipeline/gate5-approve-epic.js` to set `engagements.status = 'repo_setup'` when all epics are approved (currently sets `spec_pending`)
 
 ## 3. api/pipeline/repo-validate.js [New API Route]
 
