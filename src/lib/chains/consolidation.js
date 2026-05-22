@@ -84,23 +84,17 @@ async function parseJsonWithFallback(message) {
   }
 }
 
-// --- Chain steps ---
-
-const formatStep = RunnableLambda.from(({ inputs, industry }) => ({
-  formattedInputs: formatEngagementInputs(inputs),
-  industry,
-  industryFraming: getIndustryFraming(industry),
-}))
-
-const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-
-const outputParser = RunnableLambda.from(parseJsonWithFallback)
-
-// --- Exported chain ---
-
-export const consolidationChain = RunnableSequence.from([
-  formatStep,
-  consolidationPrompt,
-  claudeModel,
-  outputParser,
-])
+export async function consolidationChain(input) {
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const chain = RunnableSequence.from([
+    RunnableLambda.from(({ inputs, industry }) => ({
+      formattedInputs: formatEngagementInputs(inputs),
+      industry,
+      industryFraming: getIndustryFraming(industry),
+    })),
+    consolidationPrompt,
+    claudeModel,
+    RunnableLambda.from(parseJsonWithFallback),
+  ])
+  return chain.invoke(input)
+}

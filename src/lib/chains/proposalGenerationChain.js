@@ -14,15 +14,26 @@ async function parseJsonWithFallback(message) {
     return await _jsonParser.invoke(message)
   } catch {
     const text = typeof message.content === 'string' ? message.content : String(message)
+    console.log('[BSE DEBUG] proposal raw response (first 500 chars):', text.slice(0, 500))
     const stripped = stripJsonFences(text)
     const start = stripped.search(/[{[]/)
-    if (start === -1) throw new Error('proposalGenerationChain: failed to parse Claude response as JSON')
+    if (start === -1) {
+      console.log('[BSE DEBUG] proposal fallback: no opening bracket found — cannot extract JSON')
+      throw new Error('proposalGenerationChain: failed to parse Claude response as JSON')
+    }
+    console.log('[BSE DEBUG] proposal fallback: bracket extraction triggered, bracket at index', start)
     const closeChar = stripped[start] === '{' ? '}' : ']'
     const end = stripped.lastIndexOf(closeChar)
-    if (end === -1) throw new Error('proposalGenerationChain: failed to parse Claude response as JSON')
+    if (end === -1) {
+      console.log('[BSE DEBUG] proposal fallback: no closing bracket found')
+      throw new Error('proposalGenerationChain: failed to parse Claude response as JSON')
+    }
+    const slice = stripped.slice(start, end + 1)
+    console.log('[BSE DEBUG] proposal slice end:', slice.slice(-200))
     try {
-      return JSON.parse(stripped.slice(start, end + 1))
+      return JSON.parse(slice)
     } catch {
+      console.log('[BSE DEBUG] proposal fallback: JSON.parse failed on extracted slice (length', end - start + 1, ')')
       throw new Error('proposalGenerationChain: failed to parse Claude response as JSON')
     }
   }
@@ -62,13 +73,13 @@ function buildPromptInputs({ engagement, chosenSolution, context }) {
   }
 }
 
-const formatStep = RunnableLambda.from(buildPromptInputs)
-const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-const outputParser = RunnableLambda.from(parseJsonWithFallback)
-
-export const proposalGenerationChain = RunnableSequence.from([
-  formatStep,
-  proposalGenerationPrompt,
-  claudeModel,
-  outputParser,
-])
+export async function proposalGenerationChain(input) {
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
+  const chain = RunnableSequence.from([
+    RunnableLambda.from(buildPromptInputs),
+    proposalGenerationPrompt,
+    claudeModel,
+    RunnableLambda.from(parseJsonWithFallback),
+  ])
+  return chain.invoke(input)
+}

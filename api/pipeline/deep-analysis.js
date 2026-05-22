@@ -86,7 +86,7 @@ export default async function handler(req, res) {
   if (validationError) return res.status(validationError.code).json(validationError)
 
   try {
-    const solutions = await deepAnalysisChain.invoke({
+    const solutions = await deepAnalysisChain({
       structured_brief: engagement.structured_brief,
       industry: engagement.industry,
     })

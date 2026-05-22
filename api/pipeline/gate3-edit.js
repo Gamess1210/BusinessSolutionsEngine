@@ -69,7 +69,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const proposalJson = await proposalEditChain.invoke({
+    const proposalJson = await proposalEditChain({
       proposalJson: engagement.proposal_json,
       instruction,
     })

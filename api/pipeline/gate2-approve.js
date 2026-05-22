@@ -87,7 +87,7 @@ function isSharePointConfigured() {
 }
 
 async function generateDocumentA(engagement) {
-  const docAJson = await documentAGenerationChain.invoke({ engagement })
+  const docAJson = await documentAGenerationChain({ engagement })
   const html = renderDocumentAHtml(docAJson)
   const pdfBuffer = await generatePdf(html)
   if (pdfBuffer === null) return 'local-dev-skip'

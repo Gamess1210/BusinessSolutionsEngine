@@ -1,8 +1,6 @@
 import { ChatAnthropic } from '@langchain/anthropic'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages'
 
-const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-
 const PLANNING_DIMENSIONS = [
   'timeline and budget constraints',
   'team size and available skills',
@@ -99,6 +97,7 @@ function extractContent(response) {
 }
 
 export async function processMessage(conversation, engagement, message) {
+  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
   const engagementContext = buildEngagementContext(engagement)
   const systemMsg = new SystemMessage(discoverySystemPrompt(engagementContext))
   const history = conversationToMessages(conversation)
@@ -132,6 +131,7 @@ Respond ONLY with valid JSON. No preamble.`
 }
 
 export async function processPlanUpdate(conversation, engagement, instruction) {
+  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
   const engagementContext = buildEngagementContext(engagement)
   const planEntry = [...conversation].reverse().find(m => m.role === 'assistant' && m.type === 'plan')
   const currentPlan = planEntry ? JSON.stringify(planEntry.content) : 'No existing plan'

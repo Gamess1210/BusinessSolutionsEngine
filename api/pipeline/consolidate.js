@@ -120,7 +120,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const brief = await consolidationChain.invoke({
+    const brief = await consolidationChain({
       inputs,
       industry: engagement.industry,
     })

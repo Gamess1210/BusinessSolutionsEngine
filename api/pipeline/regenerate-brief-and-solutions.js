@@ -70,7 +70,7 @@ async function runConsolidation(supabaseAdmin, engagementId, industry) {
     .select('*')
     .eq('engagement_id', engagementId)
 
-  const brief = await consolidationChain.invoke({ inputs: inputs ?? [], industry })
+  const brief = await consolidationChain({ inputs: inputs ?? [], industry })
 
   await supabaseAdmin
     .from('engagements')
@@ -82,7 +82,7 @@ async function runConsolidation(supabaseAdmin, engagementId, industry) {
 
 async function runSolutionsChain(supabaseAdmin, engagement, brief) {
   const chain = engagement.analysis_mode === 'deep' ? deepAnalysisChain : quickIdeasChain
-  const solutions = await chain.invoke({
+  const solutions = await chain({
     structured_brief: brief,
     industry: engagement.industry,
   })

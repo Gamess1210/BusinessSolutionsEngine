@@ -35,13 +35,13 @@ function buildPromptInputs({ proposalJson, instruction }) {
   }
 }
 
-const formatStep = RunnableLambda.from(buildPromptInputs)
-const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-const outputParser = RunnableLambda.from(parseJsonWithFallback)
-
-export const proposalEditChain = RunnableSequence.from([
-  formatStep,
-  proposalEditPrompt,
-  claudeModel,
-  outputParser,
-])
+export async function proposalEditChain(input) {
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const chain = RunnableSequence.from([
+    RunnableLambda.from(buildPromptInputs),
+    proposalEditPrompt,
+    claudeModel,
+    RunnableLambda.from(parseJsonWithFallback),
+  ])
+  return chain.invoke(input)
+}

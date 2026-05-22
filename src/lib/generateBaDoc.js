@@ -91,7 +91,7 @@ export async function generateBaDoc(supabaseAdmin, engagementId, docType, chainI
   if (!config) return { success: false, warning: `Unknown doc_type: ${docType}` }
   try {
     const engagement = await getFullEngagement(supabaseAdmin, engagementId)
-    const docJson = await config.chain.invoke({ engagement, ...chainInput })
+    const docJson = await config.chain({ engagement, ...chainInput })
     const html = config.renderer(docJson)
     const pdfBuffer = await generatePdf(html)
     const url = pdfBuffer !== null ? await tryUpload(pdfBuffer, engagement, config.filenameSuffix) : null
