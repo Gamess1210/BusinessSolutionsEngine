@@ -107,6 +107,14 @@ function getStepPath(stepKey) {
   return null
 }
 
+const GATE_RETRY_PATHS = {
+  1: 'brief',
+  2: 'solutions',
+  3: 'proposal',
+  4: 'client-decision',
+  5: 'project-plan',
+}
+
 const COMPLETED_GATES = [
   { threshold: 'gate2_review', label: 'Brief approved', linkLabel: 'View Brief →', path: 'brief' },
   { threshold: 'gate3_review', label: 'Solutions approved', linkLabel: 'View Solutions →', path: 'solutions' },
@@ -153,7 +161,52 @@ function StepNode({ step, index, isCompleted, isActive, isPending, engagementId 
   )
 }
 
-function StatusBar({ status, pipelinePhase, engagementId }) {
+function FailedPanel({ engagementId, lastSuccessfulGate }) {
+  const navigate = useNavigate()
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState(null)
+
+  const isRestart = !lastSuccessfulGate
+  const retryPath = GATE_RETRY_PATHS[lastSuccessfulGate] ?? 'brief'
+
+  async function handleRetry() {
+    setRetrying(true)
+    setRetryError(null)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      const res = await fetch('/api/pipeline/retry-gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ engagementId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`)
+      navigate(`/review/${engagementId}/${retryPath}`)
+    } catch (err) {
+      setRetryError(err.message)
+      setRetrying(false)
+    }
+  }
+
+  return (
+    <div className="bg-red-50 border border-cred text-cred text-sm rounded px-4 py-3 mb-8">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold">Pipeline error — retry available</span>
+        <button
+          onClick={handleRetry}
+          disabled={retrying}
+          className="bg-cred text-white px-4 py-1.5 rounded font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {retrying ? 'Retrying…' : isRestart ? 'Restart from Brief →' : 'Retry from last gate →'}
+        </button>
+      </div>
+      {retryError && <p className="text-xs mt-2">{retryError}</p>}
+    </div>
+  )
+}
+
+function StatusBar({ status, pipelinePhase, engagementId, lastSuccessfulGate }) {
   const showError = pipelinePhase === 'error' || (pipelinePhase === 'idle' && status === 'failed')
 
   const stepIndex = STATUS_STEPS.findIndex(s => s.key === status)
@@ -161,11 +214,7 @@ function StatusBar({ status, pipelinePhase, engagementId }) {
   const isPending = PENDING_LABELS[status] !== undefined
 
   if (showError) {
-    return (
-      <div className="bg-red-50 border border-cred text-cred text-sm font-semibold rounded px-4 py-3 mb-8">
-        Pipeline error — retry available
-      </div>
-    )
+    return <FailedPanel engagementId={engagementId} lastSuccessfulGate={lastSuccessfulGate} />
   }
 
   return (
@@ -278,7 +327,7 @@ export default function EngagementDetail() {
         </div>
       </div>
 
-      <StatusBar status={engagement.status} pipelinePhase={pipelinePhase} engagementId={engagement.id} />
+      <StatusBar status={engagement.status} pipelinePhase={pipelinePhase} engagementId={engagement.id} lastSuccessfulGate={engagement.last_successful_gate} />
 
       <StatusSection
         engagement={engagement}
