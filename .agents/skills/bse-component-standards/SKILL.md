@@ -9,7 +9,7 @@ Gate 1  — Brief Review
 Gate 2  — Solutions Review
 Gate 3  — Client Decision, Proposal and Confirmation Loop
 Gate 4  — Client Decision and Context
-Gate 5  — Project Plan (NEW v5.6)
+Gate 5  — Project Plan — three phases: (1) Build Instructions via buildInstructionsChain, (2) Epic Discovery via projectPlanChain chat, (3) Story and Task Generation per epic (v5.7 REDESIGN)
 Gate 6  — Spec Approval
 Gate 7  — Code Review
 Gate 8  — Output Review

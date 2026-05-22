@@ -6,7 +6,7 @@ Refer to this before writing any database query.
 
 ---
 
-## Table: engagements [v5.4 CHANGE] [v5.6 CHANGE]
+## Table: engagements [v5.4 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE]
 
 ```sql
 id                    uuid primary key default gen_random_uuid()
@@ -39,6 +39,9 @@ gate4_no_further_input boolean default false  -- true if BA confirmed no additio
 project_plan          jsonb              -- approved project plan: epics, stories, tasks [v5.6]
 plan_conversation     jsonb              -- full Q&A history for project plan session [v5.6]
 current_epic_index    int default 0      -- tracks which epic is currently being built [v5.6]
+build_instructions    text               -- CLIENT_BUILD_INSTRUCTIONS.md content, approved in Gate 5 Phase 1 [v5.7]
+approved_epics        jsonb              -- list of approved epics from Gate 5 Phase 2 [{title, description, rationale}] [v5.7]
+current_plan_phase    int default 1      -- tracks which Gate 5 phase is active (1 = Build Instructions, 2 = Epic Discovery, 3 = Story Generation) [v5.7]
 sharepoint_proposal_url text             -- business proposal PDF [v5.1]
 sharepoint_brief_url  text
 sharepoint_deck_url   text
@@ -72,7 +75,7 @@ created_at      timestamptz default now()
 
 ---
 
-## Table: gate_approvals [v5.4 CHANGE] [v5.6 CHANGE]
+## Table: gate_approvals [v5.4 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE]
 
 ```sql
 id              uuid primary key default gen_random_uuid()
@@ -85,6 +88,9 @@ action          text check (action in (
                   'sent',                          -- Gate 3: proposal sent to client
                   'voided',                        -- Gate 2: voided when BA triggers contextual re-injection regeneration
                   'plan_approved',                 -- Gate 5: BA approved the project plan [v5.6]
+                  'instructions_approved',         -- Gate 5 Phase 1: build instructions approved [v5.7]
+                  'epics_approved',                -- Gate 5 Phase 2: epic list approved [v5.7]
+                  'epic_approved',                 -- Gate 5 Phase 3: individual epic stories approved [v5.7]
                   'cc_pause_approved',             -- Gate 7: BA approved continuation after CC 21+
                   'cc_pause_rejected',             -- Gate 7: BA rejected for refactor after CC 21+
                   'manual_override'                -- Gate 8: BA confirmed manual upload after 2 failed retries [v5.2]
@@ -101,6 +107,11 @@ edits_made      jsonb
 - `action` adds `'plan_approved'` (Gate 5: BA approved project plan)
 - `cc_pause_approved`/`cc_pause_rejected` comments updated to Gate 7 (was Gate 6)
 - `manual_override` added (Gate 8: manual SharePoint upload override [v5.2])
+
+**v5.7 changes:**
+- Three new columns on `engagements`: `build_instructions` (Phase 1 approved doc), `approved_epics` (Phase 2 approved list), `current_plan_phase` (active Gate 5 phase 1/2/3)
+- Three new `action` values: `instructions_approved` (Phase 1), `epics_approved` (Phase 2), `epic_approved` (Phase 3 per-epic)
+- **`plan_pending` note:** `plan_pending` covers all three phases of Gate 5. `current_plan_phase` tracks which phase is active: 1 = Build Instructions, 2 = Epic Discovery, 3 = Story and Task Generation. On error recovery, `current_plan_phase` is NOT reset — the BA re-enters the same phase they were on.
 
 ---
 

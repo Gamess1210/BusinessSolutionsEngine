@@ -54,7 +54,7 @@ Status state machine: `captured → brief_pending → gate1_review → solutions
 2. Solutions Review — human reviews generated solution options
 3. Client Decision, Proposal and Confirmation Loop — BA selects chosen solution, generates and refines Document B
 4. Client Decision and Context — BA records chosen solution and captures post-meeting context
-5. Project Plan — BA converses with Claude to produce a structured project plan
+5. Project Plan — Three-phase: Phase 1 generates CLIENT_BUILD_INSTRUCTIONS.md (BA reviews/approves), Phase 2 epic discovery via iterative chat (BA approves epic list), Phase 3 per-epic story and task generation in WHEN/THEN/AND format (BA approves each epic)
 6. Spec Approval — OpenSpec files written to client repo
 7. Code Review — Gemini scorecard + ESLint complexity scores
 8. Output Review — final client documents
@@ -91,7 +91,7 @@ src/
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
   lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, documentAGeneration,
-                  # proposalGeneration, proposalEdit, projectPlan, contextGeneration,
+                  # proposalGeneration, proposalEdit, buildInstructions, projectPlan, contextGeneration,
                   # openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
   lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
@@ -100,7 +100,8 @@ api/pipeline/     # Vercel serverless routes:
                   #   consolidate, quick-ideas, deep-analysis, gate2-approve, regenerate-brief-and-solutions
                   #   gate3-select-solution, gate3-generate, gate3-edit, gate3-send, gate3-approve, gate3-reset-solution
                   #   gate4-approve, gate4-reject
-                  #   plan-message, gate5-approve
+                  #   gate5-generate-instructions, gate5-approve-instructions, gate5-discover-epics,
+                  #   gate5-approve-epics, gate5-generate-epic-stories, gate5-approve-epic
 openspec/         # Spec-driven workflow config and change tracking
 ```
 
