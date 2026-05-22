@@ -1,5 +1,5 @@
 # BSE Build Backlog
-**Last updated:** 21 May 2026
+**Last updated:** 22 May 2026
 **Instructions version:** v5.6
 **Branch:** feature/geoff-gate5-build
 
@@ -9,6 +9,7 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 
 ## 🔴 Immediate — Before Next Gate Build
 
+- [ ] **Implement brain-dump clarification prompt (Prompt 10.10)** — braindumpStructuringPrompt.js and api/pipeline/braindump-clarify.js do not yet exist. Prompt 10.10 is defined in BSE Instructions v5.6 Section 10 and bse-prompt-library SKILL.md. Implement as NON-PIPELINE direct AI call. Before saving brain-dump input, check if ambiguous — if so, ask one clarifying question and wait for BA response. If clear, save directly. Label: `// NON-PIPELINE: direct AI call`
 - [ ] **Smoke test Gate 5 (Project Plan)** — Create Tester05 engagement, run through Gates 1–4, verify project plan chat interface works end to end, Claude asks all 8 discovery dimensions, plan generates in both Markdown and OpenSpec format, approve advances to spec_pending
 - [ ] **Archive gate4b-project-plan OpenSpec change** — Run `/opsx:archive "gate4b-project-plan"` once smoke test passes
 - [ ] **Verify contextual re-injection (tasks 6.1–6.5)** — Manual browser verification of supplementary context banner, regeneration flow, voided gate_approvals record
@@ -83,6 +84,7 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 ## 🔍 Investigate Before Acting
 
 - [ ] **Prompt file architecture review** — Currently prompts exist in three places: Section 10 of BSE Instructions, src/lib/prompts/*.js files, and bse-prompt-library SKILL.md. This creates drift risk when prompts are updated. Before acting, investigate: (1) whether src/lib/prompts/ should become the single source of truth, (2) whether Section 10 of BSE Instructions should become a reference index only (file locations + purpose, not full text), (3) whether the bse-prompt-library skill should instruct Claude Code to read the live .js file rather than containing a copied version. Risk to assess: Claude Code must be able to read prompt files reliably before this is safe to do. Do not restructure until the investigation is complete and the approach is agreed.
+- [ ] **Cross-session and cross-epic context retention for client app generation** — The BSE passes prior_modules and CONTEXT.md with each codeGenerationChain call, but this is not fully designed for multi-session builds or large codebases. Three unresolved questions: (1) how much prior code gets passed when the client app grows across many epics — context window limits mean all files cannot be passed; (2) what happens when code changes after generation (Gemini fix loop, BA rejection + regeneration) — prior_modules context could be stale; (3) cross-epic dependencies — Epic 3 importing from Epic 1 when Epic 1 has changed. Options to investigate before Gate 7 is built: Option A — selective context injection (BSE analyses dependencies and passes only relevant files per epic); Option B — CONTEXT.md as a living contract (every shared interface and exported function signature written into CONTEXT.md as it is generated, grows with the project); Option C — GBrain from gstack (persistent knowledge base, BSE indexes client repo after each epic). Option B is the most practical starting point as it extends existing design. Must be resolved before Gate 7 codeGenerationChain is implemented.
 
 ---
 
