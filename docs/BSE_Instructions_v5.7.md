@@ -2,7 +2,7 @@
 
 **How to use this document** This is the complete operating manual for the BSE build project. You are a Claude instance in a dedicated build project. Your job is to implement the system described here. Read this document in full before writing any code. When in doubt, refer back here. This document is self-contained and supersedes all previous versions (v1.0, v2.0, v3.0, v4.0, v5.0, v5.1, v5.2, v5.3, v5.4, v5.5) and all prior pipeline planning notes.
 
-**What changed from v5.5** Sections 2, 5.2, 6.2, 6.3, 7.1, 7.5 (new), 7.4, 7.6, 7.7, 7.8, 7.9, 9, 15, 16, 19, and 20 updated. Gate 5 (Project Plan) inserted between Gate 4 and Gate 6. Gates 5, 6, 7 renumbered to 6, 7, 8. Pipeline is now an eight-gate pipeline. New interactive project planning session at Gate 5: Claude conducts iterative discovery inside a chat-like BSE interface, generates a detailed project plan (epics, stories, tasks) in markdown and OpenSpec WHEN/THEN/AND format, and iterates until BA approves. Spec generation and code generation are now epic-by-epic: each epic in the approved project plan becomes a capability folder, and each has its own gate_approvals record. New chain: `projectPlanChain` (Claude). New API routes: `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve`. New page: `src/pages/review/ProjectPlanReview.jsx`. New schema columns on `engagements`: `project_plan`, `plan_conversation`, `current_epic_index`. New statuses: `plan_pending`, `gate5_review`. All prior gate status references updated throughout. See the change log at the end of this document for a full summary. [v5.6]
+**What changed from v5.6** Sections 2, 5.2, 6.2, 6.3, 7.1, 7.5 (new), 7.4, 7.6, 7.7, 7.8, 7.9, 9, 15, 16, 19, and 20 updated. Gate 5 (Project Plan) inserted between Gate 4 and Gate 6. Gates 5, 6, 7 renumbered to 6, 7, 8. Pipeline is now an eight-gate pipeline. New interactive project planning session at Gate 5: Claude conducts iterative discovery inside a chat-like BSE interface, generates a detailed project plan (epics, stories, tasks) in markdown and OpenSpec WHEN/THEN/AND format, and iterates until BA approves. Spec generation and code generation are now epic-by-epic: each epic in the approved project plan becomes a capability folder, and each has its own gate_approvals record. New chain: `projectPlanChain` (Claude). New API routes: `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve`. New page: `src/pages/review/ProjectPlanReview.jsx`. New schema columns on `engagements`: `project_plan`, `plan_conversation`, `current_epic_index`. New statuses: `plan_pending`, `gate5_review`. All prior gate status references updated throughout. See the change log at the end of this document for a full summary. [v5.6]
 
 ---
 
@@ -220,6 +220,14 @@ Capture inputs (any combination)
                     └─────────┬──────────────────────────────────┘
                               │ [Approved → repo_setup]
                               ▼
+                    BA action: Repository Setup
+                    BA connects GitHub repo, validates
+                    .gitignore, creates scaffold commit:
+                    CLAUDE.md, skills, OpenSpec config
+                    Status advances to spec_pending
+                              │
+                              ▼
+                    spec_pending (automatic):
                     LangChain: CONTEXT.md Generation Chain
                     Claude extracts domain vocabulary from
                     chosen solution + approved brief + inputs
@@ -231,7 +239,7 @@ Capture inputs (any combination)
                     Claude generates spec in OpenSpec
                     WHEN/THEN/AND format epic by epic
                     from the approved project plan
-                    Files committed to client repo branch
+                    Spec files committed in second commit
                     Spec stored in repo — not Supabase
                               │
                     ┌─────────▼──────────────────────────────────┐
@@ -338,7 +346,7 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 
 `proposalGenerationChain` is added as a new chain between `deepAnalysisChain` and `contextGenerationChain`. Gate numbering updated throughout.
 
-**Gate 4 — no AI chain:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. After Gate 4 approval, `projectPlanChain` runs interactively at Gate 5 before spec generation begins. `contextGenerationChain` and `openspecGenerationChain` run during Repository Setup (between `gate5_review` and `gate6_review`), not at Gate 6. [v5.4] [v5.6 CHANGE] [v5.7 CHANGE]
+**Gate 4 — no AI chain:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. After Gate 4 approval, `projectPlanChain` runs interactively at Gate 5 before spec generation begins. `contextGenerationChain` and `openspecGenerationChain` run during `spec_pending` (automatically after Repository Setup completes, between `repo_setup` and `gate6_review`), not at Gate 6. [v5.4] [v5.6 CHANGE] [v5.7 CHANGE]
 
 **Gate 5 — projectPlanChain:** Gate 5 (Project Plan) is an interactive session driven by `projectPlanChain`. Claude asks probing discovery questions inside the BSE, generates a detailed project plan (epics, stories, tasks), and iterates until the BA approves. On approval (gate_number=5, action='plan_approved'), the plan is stored in `engagements.project_plan` and status advances to `repo_setup`. See Section 7.5 for full detail. [v5.6 NEW]
 
@@ -520,7 +528,7 @@ ESLint complexity scoring runs independently in pre-check and is displayed separ
 - `/review/[id]/proposal` — Gate 3 review. BA selects chosen solution, adds supplementary context, reviews and edits Document B in a loop until satisfied, then approves. [v5.5 CHANGE]
 - `/review/[id]/client-decision` — Gate 4 client decision. BA selects chosen solution from approved options (required, radio button selection), adds supplementary context via brain-dump, transcript, or guided questions (all optional), or checks no-further-input. Advances to plan_pending on approval. [v5.4 NEW]
 - `/review/[id]/project-plan` — Gate 5 project plan review. Chat-like interface. BA reviews and iterates on the project plan with Claude. Approves when satisfied. [v5.6 NEW]
-- `/review/[id]/repo-setup` — **RepoSetup.jsx** — Repository Setup screen. Two-step: (1) connect and validate GitHub repo, check `.gitignore` for `.agents/`, BSE auto-adds if missing; (2) preview folder structure and create it — runs `contextGenerationChain` and `openspecGenerationChain` per epic, commits all files to feature branch in one commit. Accessible when `status = 'repo_setup'`. Advances to `gate6_review` on success. [v5.7 NEW]
+- `/review/[id]/repo-setup` — **RepoSetup.jsx** — Repository Setup screen. Two-step: (1) connect and validate GitHub repo, check `.gitignore` for `.agents/`, BSE auto-adds if missing; (2) preview scaffold structure and create it — commits CLAUDE.md, skill files, and OpenSpec config to the feature branch. Accessible when `status = 'repo_setup'`. Advances to `spec_pending` on success. Chain generation runs automatically during `spec_pending`. [v5.7 NEW]
 - `/settings/skills` — **Skills.jsx** — Skills Registry settings page. Lists all five BSE skills. BA uploads `SKILL.md` content per skill. Missing skills (null content) block repo setup. Changes only affect new engagements, never existing feature branches. [v5.7 NEW]
 - `/review/[id]/spec` — Gate 6 spec review. Renders OpenSpec markdown files. Sections flaggable for regeneration.
 - `/review/[id]/code` — Gate 7 code review. Gemini scorecard, ESLint CC scores per file, per-cycle review history, diff view, escalation flag. [v5.1 CHANGE]
@@ -610,7 +618,7 @@ Gate 5 is the Project Plan review. It is an interactive session between the BA a
 
 **New page:** `src/pages/review/ProjectPlanReview.jsx`
 
-After Gate 5 approval, the BA proceeds to Repository Setup (`/review/:id/repo-setup`). `contextGenerationChain` and `openspecGenerationChain` (per epic) run during Repository Setup, not at Gate 6. All files are committed to the feature branch in a single commit. The BA reviews specs one epic at a time at Gate 6. [v5.7 CHANGE]
+After Gate 5 approval, the BA proceeds to Repository Setup (`/review/:id/repo-setup`). The BA connects the GitHub repo, validates `.gitignore`, and creates the scaffold commit (CLAUDE.md, skills, OpenSpec config). On completion, status advances to `spec_pending` and `contextGenerationChain` then `openspecGenerationChain` (per epic) run automatically. Spec files are committed in a second commit. The BA reviews specs one epic at a time at Gate 6. [v5.7 CHANGE]
 
 ### 7.4 Gate 6 — Spec Review Detail [v5.6 CHANGE]
 
@@ -620,9 +628,9 @@ Gate 6 is the most consequential technical gate. All code generation is downstre
 
 **What happens before Gate 6:** [v5.7 CHANGE]
 
-After Gate 5 approval, the BA proceeds to Repository Setup (`/review/:id/repo-setup`). All chain work (context extraction, spec generation) happens there, not at Gate 6. By the time Gate 6 opens, all OpenSpec files are already committed to the feature branch.
+After Gate 5 approval, the BA proceeds to Repository Setup (`/review/:id/repo-setup`). The scaffold commit (CLAUDE.md, skill files, OpenSpec config) is created there, and status advances to `spec_pending`. All chain work (context extraction, spec generation) then runs automatically during `spec_pending`. By the time Gate 6 opens, all OpenSpec files are already committed to the feature branch.
 
-During Repository Setup: `contextGenerationChain` runs once — Claude reads the chosen solution, approved brief, all engagement inputs, and the approved project plan and produces `CONTEXT.md` (domain vocabulary, key terms, architectural decisions) and `docs/adr/` entries. `openspecGenerationChain` then generates specs epic by epic. Each epic in `engagements.project_plan` becomes one capability folder under `openspec/changes/{engagement-id}/specs/`. User stories become `### Requirement:` headers with `#### Scenario:` blocks in WHEN/THEN/AND syntax. Acceptance criteria become scenario steps. All files are committed to the client repo branch in one commit. The `specifications` table in Supabase stores `repo_path` and `commit_sha` — not the spec content itself.
+During `spec_pending`: `contextGenerationChain` runs once — Claude reads the chosen solution, approved brief, all engagement inputs, and the approved project plan and produces `CONTEXT.md` (domain vocabulary, key terms, architectural decisions) and `docs/adr/` entries. `openspecGenerationChain` then generates specs epic by epic. Each epic in `engagements.project_plan` becomes one capability folder under `openspec/changes/{engagement-id}/specs/`. User stories become `### Requirement:` headers with `#### Scenario:` blocks in WHEN/THEN/AND syntax. Acceptance criteria become scenario steps. All spec files are committed to the client repo branch in a second commit (on top of the scaffold commit). The `specifications` table in Supabase stores `repo_path` and `commit_sha` — not the spec content itself.
 
 **What the BA sees at Gate 6:**
 - OpenSpec markdown files rendered in the BSE UI (not a form, not a JSON viewer)
@@ -715,7 +723,7 @@ On any chain failure:
 captured → brief_pending → gate1_review → solutions_pending → gate2_review
 → proposal_pending → gate3_review → gate4_review
 → plan_pending → gate5_review
-→ repo_setup → gate6_review
+→ repo_setup → spec_pending → gate6_review
 → code_pending → code_review → gate7_review
 → output_pending → gate8_review → complete
 
@@ -809,7 +817,7 @@ status                text default 'captured' check (status in (
                         'proposal_pending', 'gate3_review',
                         'gate4_review',
                         'plan_pending', 'gate5_review',
-                        'repo_setup', 'gate6_review',
+                        'repo_setup', 'spec_pending', 'gate6_review',
                         'code_pending', 'code_review', 'gate7_review',
                         'output_pending', 'gate8_review', 'complete',
                         'rejected', 'failed'
@@ -833,6 +841,7 @@ sharepoint_report_url text               -- review loop report PDF
 sharepoint_project_summary_url text      -- project summary PDF [v5.2]
 project_summary_upload_attempts int default 0  -- tier 2/3 retry counter [v5.2]
 github_repo           text               -- 'org/repo-name', populated by repo-validate.js [v5.7]
+eslint_config_exists  boolean default false  -- populated by repo-validate.js [v5.7]
 hubspot_deal_id       text               -- nullable; reserved for future CRM
 notes                 text
 ```
@@ -1529,10 +1538,11 @@ FALLOW_GATE_MIN_VERSION=2.46.0        # Minimum Fallow version for uncommitted-c
 - Implement `projectPlanChain` (interactive project planning via Claude; discovery questions + plan generation + iterations; stores approved plan in `engagements.project_plan`) [v5.6]
 - Build Gate 5 project plan review screen (`/review/:id/project-plan`) — chat-like interface, plan display in markdown and OpenSpec format, approve/iterate [v5.6]
 - Implement `/api/pipeline/plan-question`, `/api/pipeline/plan-update`, `/api/pipeline/gate5-approve` routes [v5.6]
-- Implement Repository Setup screen (`/review/:id/repo-setup`) — Step 1: GitHub repo validation + `.gitignore` check + auto-add; Step 2: structure preview + `contextGenerationChain` + `openspecGenerationChain` per epic + single branch commit [v5.7]
+- Implement Repository Setup screen (`/review/:id/repo-setup`) — Step 1: GitHub repo validation + `.gitignore` check + auto-add; Step 2: scaffold preview + scaffold commit (CLAUDE.md, skills, OpenSpec config); advances to `spec_pending` [v5.7]
 - Implement Skills Registry settings page (`/settings/skills`) — skill list, upload, preview [v5.7]
 - Implement `api/pipeline/repo-validate.js` — GitHub repo existence check, write access, `.gitignore` read, auto-add `.agents/` if missing [v5.7]
-- Implement `api/pipeline/repo-setup.js` — branch creation, chain runs, single commit of all files [v5.7]
+- Implement `api/pipeline/repo-setup.js` — scaffold-only commit (CLAUDE.md, skills, OpenSpec config, optional ESLint config); sets status to `spec_pending` [v5.7]
+- Implement `api/pipeline/spec-generate.js` — runs `contextGenerationChain` once then `openspecGenerationChain` per epic, commits spec files, advances to `gate6_review` [v5.7 — future build]
 - Implement `api/settings/skills-update.js` — upsert skill content in registry [v5.7]
 - Implement `contextGenerationChain` (produces CONTEXT.md + ADRs)
 - Implement `openspecGenerationChain` (produces OpenSpec files in client repo, epic by epic)
@@ -1772,7 +1782,7 @@ await triggerCcPauseNotification(engagementId, ccReport)
 ```
 BSE `skills` table (Supabase) → repo-setup.js reads at setup time
   → committed to feature branch as `.agents/skills/{name}/SKILL.md`
-  → null content → committed as `.agents/skills/{name}/.gitkeep` (blocks setup)
+  → null content → blocks repo setup with HTTP 422 (missing skill names listed in error response)
   → never pushed to existing branches — only affects new engagements
 ```
 
@@ -1983,10 +1993,10 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 
 | # | Section affected | Change | Type |
 |---|---|---|---|
-| 1 | 2, 5.2, 9, 15, 16 | `spec_pending` status removed. `repo_setup` status inserted between `gate5_review` and `gate6_review`. Repository Setup is the bridge between planning and execution phases. | Status machine change |
-| 2 | 7.1 (new), 15, 16 | Repository Setup screen added (`/review/:id/repo-setup`). Two-step UI: connect GitHub repo + validate `.gitignore`; preview and create folder structure. `contextGenerationChain` and `openspecGenerationChain` (per epic) run here, not at Gate 6. Single commit to feature branch. | New screen + chain relocation |
-| 3 | 7.1 (new), 9, 15, 16 | Skills Registry added. New `skills` Supabase table. New settings page at `/settings/skills`. BA uploads `SKILL.md` content per skill. Missing skills block repo setup. Skill updates never propagate to existing feature branches. | New feature |
-| 4 | 9 | New `github_repo text` column on `engagements`. Populated by `repo-validate.js` on successful validation. | Schema addition |
+| 1 | 2, 5.2, 9, 15, 16 | `repo_setup` status inserted between `gate5_review` and `spec_pending`. `spec_pending` retained as the automatic chain-running phase. Repository Setup is the active BA step to connect and scaffold the GitHub repo; spec generation runs automatically in `spec_pending` afterwards. | Status machine change |
+| 2 | 7.1 (new), 15, 16 | Repository Setup screen added (`/review/:id/repo-setup`). Two-step UI: (1) connect GitHub repo + validate `.gitignore`; (2) preview and create scaffold (CLAUDE.md, skills, OpenSpec config) — commits scaffold files to feature branch, advances to `spec_pending`. Chain generation (`contextGenerationChain`, `openspecGenerationChain`) runs automatically during `spec_pending`. | New screen |
+| 3 | 7.1 (new), 9, 15, 16 | Skills Registry added. New `skills` Supabase table. New settings page at `/settings/skills`. BA uploads `SKILL.md` content per skill. Missing skills block repo setup with 422 error. Skill updates never propagate to existing feature branches. | New feature |
+| 4 | 9 | New `github_repo text` and `eslint_config_exists boolean` columns on `engagements`. Both populated by `repo-validate.js` on successful validation. | Schema addition |
 | 5 | 7.1, 9, 16 | `.gitignore` enforcement hardened. BSE reads `.gitignore` via GitHub API. If `.agents/` is absent, hard block with "Fix .gitignore" button — BSE commits the rule to the default branch automatically. | Enforcement change |
-| 6 | 7.4, 16 | Gate 6 (Spec Approval) updated. Generation of specs now happens during Repository Setup, not at Gate 6. Gate 6 is now pure review of already-committed specs. | Gate redesign |
-| 7 | 15 | New API routes: `api/pipeline/repo-validate.js`, `api/pipeline/repo-setup.js`, `api/settings/skills-update.js`. | New routes |
+| 6 | 7.4, 16 | Gate 6 (Spec Approval) updated. Chain generation now happens during `spec_pending` (after Repository Setup), not at Gate 6. Gate 6 is pure review of already-committed specs. | Gate redesign |
+| 7 | 15 | New API routes: `api/pipeline/repo-validate.js`, `api/pipeline/repo-setup.js` (scaffold only), `api/pipeline/spec-generate.js` (chains — future build), `api/settings/skills-update.js`. | New routes |
