@@ -32,13 +32,13 @@ All config is accessed via `import.meta.env.VITE_*`.
 
 ## Architecture Overview
 
-**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through an eight-gate review pipeline.
+**Business Solutions Engine** is a React 19 + Vite SPA for Comotion consultants to manage AI-powered client engagements. Consultants capture client problems through three intake modes, then route them through a seven-gate review pipeline. The BSE ends at Spec Approval and Output Package generation — it does not generate, review, or deploy client code.
 
 ### Key Concepts
 
 **Engagement** — the central entity. Has `status`, `analysis_mode` (quick/deep), and `industry` (financial_services/general).
 
-Status state machine: `captured → brief_pending → gate1_review → solutions_pending → gate2_review → proposal_pending → gate3_review → gate4_review → plan_pending → gate5_review → spec_pending → gate6_review → code_pending → code_review → gate7_review → output_pending → gate8_review → complete`. Any state → `failed` on chain error. `failed` → last successful gate state on BA retry.
+Status state machine: `captured → brief_pending → gate1_review → solutions_pending → gate2_review → proposal_pending → gate3_review → gate4_review → plan_pending → gate5_review → spec_pending → gate6_review → output_pending → gate7_review → complete`. Any state → `failed` on chain error. `failed` → last successful gate state on BA retry.
 
 **Capture modes** (how client input enters the system):
 - **Guided** — 14 structured discovery questions, one at a time
@@ -49,15 +49,14 @@ Status state machine: `captured → brief_pending → gate1_review → solutions
 - **Quick Ideas** — Single Claude call, 3 solution options, <60s
 - **Deep Analysis** — Two sequential Claude calls, full brief + 5 solutions with ROI/risk, ~5min
 
-**Eight-gate pipeline** (from `openspec/config.yaml`):
+**Seven-gate pipeline** (from `openspec/config.yaml`):
 1. Brief Review — human reviews AI-structured problem brief
 2. Solutions Review — human reviews generated solution options
 3. Client Decision, Proposal and Confirmation Loop — BA selects chosen solution, generates and refines Document B
 4. Client Decision and Context — BA records chosen solution and captures post-meeting context
 5. Project Plan — Three-phase: Phase 1 generates CLIENT_BUILD_INSTRUCTIONS.md (BA reviews/approves), Phase 2 epic discovery via iterative chat (BA approves epic list), Phase 3 per-epic story and task generation in WHEN/THEN/AND format (BA approves each epic)
 6. Spec Approval — OpenSpec files written to client repo
-7. Code Review — Gemini scorecard + ESLint complexity scores
-8. Output Review — final client documents
+7. Output Package & Download — BA reviews and approves the full client document package; downloads are made available
 
 **Client Intake** — public token-based form at `/intake/:token`. Internal user generates a UUID token via Dashboard; client fills the form without auth; data lands in `engagement_inputs` with `intake_token`.
 
@@ -86,13 +85,13 @@ src/
   pages/          # Login, Dashboard, NewEngagement, EngagementDetail, IntakeForm
   pages/review/   # BriefReview (Gate 1), SolutionsReview (Gate 2), ProposalReview (Gate 3),
                   # ClientDecisionReview (Gate 4), ProjectPlanReview (Gate 5),
-                  # SpecReview (Gate 6), CodeReview (Gate 7), OutputsReview (Gate 8)
+                  # SpecReview (Gate 6), OutputsReview (Gate 7)
                   # Part1SolutionSelect, Part2ContextCapture, Part3ProposalLoop (Gate 3 sub-screens)
   components/layout/Layout.jsx   # Top nav + <Outlet>
   lib/            # supabase.js (client), auth.js (helpers)
   lib/chains/     # LangChain chains: consolidation, quickIdeas, deepAnalysis, documentAGeneration,
                   # proposalGeneration, proposalEdit, buildInstructions, projectPlan, contextGeneration,
-                  # openspecGeneration, codeGeneration, codeFix, codeReview, reviewLoop, outputGeneration
+                  # openspecGeneration, outputGeneration
   lib/prompts/    # LangChain prompt templates: deepAnalysisPrompt, solutionsPrompt
   hooks/          # useAuth.js
   App.jsx         # Routes + ProtectedRoute
@@ -139,12 +138,6 @@ try {
 
 These rules are non-negotiable. Every file in this repo must comply.
 
-### AI Model Separation
-- `codeGenerationChain` and `codeFixChain` always use Claude (claude-sonnet-4-20250514)
-- `codeReviewChain` always uses Gemini (gemini-2.0-flash)
-- Never use the same model for generation and review — this is structural, not optional
-- All chains live in `src/lib/chains/` — never call Anthropic or Google APIs directly in components
-
 ### LangChain Chains
 All multi-step AI sequences use LangChain 0.3.x chains. Direct API calls are not permitted for pipeline steps. Single-step utility functions may call Claude directly but must be labelled:
 ```javascript
@@ -161,29 +154,23 @@ Chains to implement (in order):
 7. `projectPlanChain` — interactive discovery + project plan generation + iteration loop (Claude)
 8. `contextGenerationChain` — extracts domain vocabulary → CONTEXT.md (Claude)
 9. `openspecGenerationChain` — generates OpenSpec files in client repo, epic by epic (Claude)
-10. `codeGenerationChain` — generates code from OpenSpec (Claude)
-11. `codeFixChain` — applies targeted fixes from Gemini review (Claude)
-12. `codeReviewChain` — scores code on 5 dimensions (Gemini)
-13. `reviewLoopChain` — orchestrates pre-check → Gemini review → fix cycles (Both)
-14. `outputGenerationChain` — generates final A4 HTML documents (Claude)
+10. `outputGenerationChain` — generates final A4 HTML documents (Claude)
 
 ### Gate Enforcement
 - Gate state is always verified server-side in Vercel API routes (`/api/pipeline/...`)
 - Frontend never controls pipeline progression — it only reflects state from Supabase
-- Eight mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
+- Seven mandatory gates — nothing advances without a `gate_approvals` record in Supabase:
   - Gate 1: Brief Review
   - Gate 2: Solutions Review
   - Gate 3: Business Proposal (client-facing PDF, sent from app to client_email)
   - Gate 4: Client Decision and Context (BA selects chosen solution; optional supplementary context)
   - Gate 5: Project Plan (BA and Claude build structured project plan)
   - Gate 6: Spec Approval (OpenSpec files committed to client repo)
-  - Gate 7: Code Review (Gemini scorecard + ESLint CC scores per file)
-  - Gate 8: Output Review (final client documents)
+  - Gate 7: Output Package & Download (BA reviews and approves final client document package)
 
-### ESLint Complexity — Pre-check Behaviour
+### ESLint Complexity
 - CC 1–10: pass
-- CC 11–20: error — auto-fed to codeFixChain before Gemini review runs
-- CC 21+: untestable — pipeline PAUSES, BA notified via Teams, human decision required
+- CC 11+: error — build-blocking, refactor required
 - Never suppress complexity errors with eslint-disable comments
 
 ### Error Recovery Pattern
@@ -206,18 +193,17 @@ try {
 - All PDFs use the `comotion-a4-html-template.html` standard — read this file before writing any document generation code
 - Pipeline: Claude JSON → A4 HTML → Puppeteer (@sparticuz/chromium) → PDF → SharePoint
 - Never use standard `puppeteer` — always `puppeteer-core` + `@sparticuz/chromium`
-- Eleven documents per engagement:
+- Ten documents per engagement:
   - Document A: Solution Options Summary PDF (after Gate 2, all approved options, not client-branded)
   - Document B: Business Proposal PDF (Gate 3, client-facing, Comotion-branded, chosen solution only)
   - As-Is Process Map PDF (after Gate 1 approval, internal + client validation)
   - Business Requirements Document (BRD) PDF (after Gate 1 approval, client sign-off)
   - Stakeholder Impact Assessment (SIA) PDF (after Gate 3 proposal sent, internal + client sponsor)
   - To-Be Process Map PDF (after Gate 6 approval, internal + client sign-off)
-  - Requirements Traceability Matrix (RTM) PDF (progressive: initial after Gate 1, updated after Gate 6, finalised after Gate 7 — mandatory for financial services)
-  - Business Readiness and Change Management Plan PDF (after Gate 7 approval, client-facing)
-  - Final Client Brief PDF (Gate 8, client-facing)
-  - Review Loop Report PDF (Gate 8, internal only, never sent to clients)
-  - Project Summary PDF (Gate 8, internal only, full engagement audit trail, never sent to clients)
+  - Requirements Traceability Matrix (RTM) PDF (progressive: initial after Gate 1, updated after Gate 6, finalised at Gate 7 — mandatory for financial services) <!-- FLAG: was "finalised after [old] Gate 7 Code Review" — confirm Gate 7 Output Package is still the right trigger -->
+  - Business Readiness and Change Management Plan PDF (after Gate 6 approval, client-facing) <!-- FLAG: was "after [old] Gate 7 Code Review approval" — updated to Gate 6 Spec Approval as best guess; confirm -->
+  - Final Client Brief PDF (Gate 7, client-facing)
+  - Project Summary PDF (Gate 7, internal only, full engagement audit trail, never sent to clients)
 
 ### Schema Rules
 - Never store spec content in Supabase — specs live in the client GitHub repo
@@ -225,16 +211,8 @@ try {
 - `client_email` on `engagements` — captured at new engagement setup, used for Gate 3 proposal delivery
 - Before writing any database query, check the Supabase Schema Reference skill
 
-### Branch Naming for Generated Code
-feature/{client-name}/{engagement-id}
-
-Pipeline never merges to any branch. All merges are manual human decisions.
-
 ### Skills Available in This Project
 Located in `.agents/skills/` — reference before implementing related functionality:
 - `/caveman` — token-efficient generation (~75% reduction, full accuracy preserved)
-- `/tdd` — red-green-refactor per user story
 - `/zoom-out` — re-read codebase for context before applying fixes
-- `/diagnose` — manual BA tool after Gate 7 only, not used in automated loop
-- `/setup-matt-pocock-skills` — must run before `/to-issues`
-- `/to-issues` — converts epics to GitHub issues
+<!-- FLAG: /tdd, /diagnose, /setup-matt-pocock-skills, /to-issues were all code-generation-era skills. Removed here pending your confirmation that they no longer apply in v6. -->

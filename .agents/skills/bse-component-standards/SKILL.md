@@ -17,18 +17,6 @@ Gate 8  — Output Review
 
 ---
 
-## Model Separation Rule
-
-`codeGenerationChain` and `codeFixChain` always use Claude. `codeReviewChain` always uses Gemini. Enforced in code. If a future change attempts to use the same model for both generation and review, it must be explicitly rejected.
-
-- `codeGenerationChain` → Claude (claude-sonnet-4-20250514)
-- `codeFixChain` → Claude (claude-sonnet-4-20250514)
-- `codeReviewChain` → Gemini (gemini-2.0-flash)
-
-Never use the same model for generation and review — this is structural, not optional. All chains live in `src/lib/chains/` — never call Anthropic or Google APIs directly in components.
-
----
-
 ## Server-Side Gate Enforcement
 
 Gate status is always verified in a Vercel API route before the pipeline proceeds. The frontend never controls gate progression — it only reflects state from Supabase.
@@ -72,11 +60,11 @@ On any chain failure:
 
 // Pre-check reads ESLint JSON output and classifies per file:
 // CC 1–10:  severity = 'green' or 'warn' — pass
-// CC 11–20: severity = 'error'            — auto-fix via codeFixChain
+// CC 11–20: severity = 'error'            — build-blocking, refactor required
 // CC 21+:   severity = 'untestable'       — pause for BA decision
 ```
 
-ESLint complexity scoring runs independently in pre-check and is displayed separately on the Gate 5 screen — it is not one of Gemini's five dimensions. The two signals are complementary: ESLint gives a per-file objective CC score; Gemini gives a holistic subjective complexity assessment across the full codebase.
+ESLint complexity scoring runs at the pre-check stage. CC 1–10 passes; CC 11–20 is a build-blocking error requiring refactor; CC 21+ pauses for BA decision.
 
 Never suppress complexity errors with eslint-disable comments.
 
@@ -246,5 +234,5 @@ failed → [last_successful_gate state] (on BA retry)
 | Gate 2 — Solutions Review | Claude generates solutions | Edit, reorder, remove, add notes, approve | None |
 | Gate 3 — Business Proposal | `proposalGenerationChain` produces PDF | Preview PDF; approve and send to client email; or reject | Power Automate: email to client on send |
 | Gate 4 — Spec Approval | OpenSpec files committed to client repo | Review OpenSpec markdown; flag sections for regeneration; approve | None |
-| Gate 5 — Code Review | Review loop completes (threshold or max cycles) | Review Gemini scorecard, ESLint CC scores, cycle history, code diff; approve or reject. `/diagnose` available manually. | Teams: CC 21+ pause events only |
+| Gate 7 — Code Review | Review loop completes | Review ESLint CC scores and code diff; approve or reject. `/diagnose` available manually. | Teams: CC 21+ pause events only |
 | Gate 6 — Output Review | A4 HTML PDFs generated | Preview client documents; approve or reject | Teams + email always |

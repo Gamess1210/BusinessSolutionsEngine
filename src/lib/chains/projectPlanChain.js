@@ -107,6 +107,10 @@ If all dimensions are covered with sufficient detail, respond with:
 
 const JSON_REMINDER = '\n\nREMINDER: Respond only with valid JSON: {"type": "question", "content": "..."} or {"type": "plan", "content": {...}}. No other text.'
 
+function makeClaude() {
+  return new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
+}
+
 function conversationToMessages(conversation) {
   return conversation.map(msg => {
     if (msg.role === 'user') return new HumanMessage(msg.content)
@@ -120,7 +124,7 @@ function extractContent(response) {
 }
 
 export async function processMessage(conversation, engagement, message) {
-  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
+  const claude = makeClaude()
   const engagementContext = buildEngagementContext(engagement)
   const systemMsg = new SystemMessage(discoverySystemPrompt(engagementContext))
   const history = conversationToMessages(conversation)
@@ -163,7 +167,7 @@ Respond with:
 }
 
 export async function processPlanUpdate(conversation, engagement, instruction) {
-  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
+  const claude = makeClaude()
   const engagementContext = buildEngagementContext(engagement)
   const planEntry = [...conversation].reverse().find(m => m.role === 'assistant' && m.type === 'plan')
   const currentPlan = planEntry ? JSON.stringify(planEntry.content) : 'No existing plan'

@@ -18,10 +18,7 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
-      // BSE complexity rule — see Section 6.4 of BSE Instructions v5.1
-      // CC 1-10:  pass (green/warn)
-      // CC 11-20: error — auto-fed to codeFixChain before Gemini review
-      // CC 21+:   untestable — pipeline pauses, BA notified via Teams
+      // BSE complexity rule — CC 1-10: pass; CC 11+: build-blocking error, refactor required
       'complexity': ['error', { 'max': 10 }],
     },
   },

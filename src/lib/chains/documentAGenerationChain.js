@@ -44,7 +44,7 @@ async function parseJsonWithFallback(message) {
 }
 
 export async function documentAGenerationChain(input) {
-  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const chain = RunnableSequence.from([
     RunnableLambda.from(({ engagement }) => buildPromptInputs(engagement)),
     documentAPrompt,

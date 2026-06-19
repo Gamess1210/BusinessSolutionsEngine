@@ -1974,7 +1974,3 @@ If the Fallow hook is installed at Step 12, do not add `fallow audit` to the pre
 | 4 | 7.7 | State machine note added: `plan_pending` covers all three Gate 5 phases; `current_plan_phase` (1/2/3) tracks active phase. Error recovery re-enters the same phase — `current_plan_phase` is not reset on retry. | Architecture note |
 | 5 | 9 (engagements) | Three new columns added: `build_instructions text` (approved Phase 1 document), `approved_epics jsonb` (approved Phase 2 epic list), `current_plan_phase int default 1` (active Gate 5 phase). | Schema addition |
 | 6 | 9 (gate_approvals) | Three new action values added: `instructions_approved` (Phase 1 approval), `epics_approved` (Phase 2 approval), `epic_approved` (Phase 3 per-epic approval). | Schema change |
-<<<<<<< HEAD
-
-=======
->>>>>>> feature/geoff-gate5-smoketest

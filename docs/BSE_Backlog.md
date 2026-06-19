@@ -1,7 +1,7 @@
 # BSE Build Backlog
-**Last updated:** 22 May 2026
+**Last updated:** 19 Jun 2026
 **Instructions version:** v5.7
-**Branch:** feature/geoff-gate5-build
+**Branch:** feature/geoff-gate5-smoketest
 
 This is the living backlog for the BSE build. Items are grouped by priority and type. Update this file after every session.
 
@@ -31,7 +31,7 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 
 - [ ] **Smoke test BA documents** — Gate 1 approval should trigger As-Is Process Map + BRD (non-fatal). Gate 3 send should trigger SIA (non-fatal). Verify all URLs stored as null locally and pipeline is not blocked.
 - [ ] **BA document prompts verification** — Read all 6 BA document chain files, confirm prompts match the skeleton documents from BSE_BA_Skeleton_Documents.docx
-- [ ] **RTM progressive enrichment** — rtm_data JSONB enriched at Gate 1 (requirements), Gate 6 (OpenSpec links), Gate 7 (test results). Only Gate 1 pass is currently implemented.
+- [ ] **RTM progressive enrichment** — rtm_data JSONB enriched at Gate 1 (requirements), Gate 6 (OpenSpec links). Gate 7 finalisation from code review removed in v6. Only Gate 1 pass is currently implemented.
 
 ---
 
@@ -39,33 +39,35 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 
 - [ ] **Puppeteer + @sparticuz/chromium setup** — Install puppeteer-core + @sparticuz/chromium. Verify generatePdf() works in Vercel serverless. Remove local-dev-skip once confirmed.
 - [ ] **Microsoft Graph API + MSAL** — Set up Azure AD app registration (needs Comotion IT). Implement SharePoint folder creation including _internal/ subfolder. Wire all 6 document uploads.
-- [ ] **Gate 8 output generation** — outputGenerationChain, Final Client Brief PDF, Review Loop Report PDF, Project Summary PDF. Three-tier upload failure recovery for Project Summary.
-- [ ] **Gate 8 review screen** — Replace placeholder OutputsReview.jsx with full implementation.
+- [ ] **Gate 7 output generation** — outputGenerationChain, Final Client Brief PDF, Project Summary PDF. Three-tier upload failure recovery for Project Summary.
+- [ ] **Gate 7 review screen** — Replace placeholder OutputsReview.jsx with full implementation.
 
 ---
 
 ## 🔵 Phase 5 — Power Automate (Geoff's scope)
 
-- [ ] **7 Power Automate flows** — Client intake notification, Document B send, Review loop report delivery, CC 21+ pause, Gate 8 approval, Gate 8 rejection, Chain failure. All triggered via HTTP POST from Vercel API routes.
+- [ ] **Power Automate flows** — Client intake notification, Document B send, Gate 7 approval, Gate 7 rejection, Chain failure. All triggered via HTTP POST from Vercel API routes.
 - [ ] **Wire POWER_AUTOMATE_* env vars** — Add all 6 trigger URLs to .env once flows are built.
 - [ ] **Outlook email addresses** — Populate users.outlook_email for all team members before flows go live.
 
 ---
 
-## 🟣 Other Developer's Scope (Gates 6–8 technical build)
+## ⛔ Moved to downstream Build microservice (out of BSE scope)
 
-- [ ] **Gate 7 — Code Review** — codeGenerationChain, codeReviewChain (Gemini), codeFixChain, reviewLoopChain, pre-check stage (lint + ESLint CC + type-check + openspec validate), CC 21+ pause logic, Gate 7 review screen
-- [ ] **Gate 8 — Output Review** — Full screen replacing placeholder, gate8-approve, gate8-reject
-- [ ] **Client repo setup** — openspec init, /setup-matt-pocock-skills, /git-guardrails, /to-issues, fallow hooks install --target agent
-- [ ] **GitHub integration** — Commit spec files to feature/{client-name}/{engagement-id} branch. Wire GITHUB_TOKEN and GITHUB_REPO env vars.
+The BSE ends at Spec Approval (Gate 6) and Output Package generation (Gate 7). The items below are no longer tracked in this backlog — they belong to a separate downstream Build microservice.
+
+- [ ] **Gate 7 code review build** — codeGenerationChain, codeReviewChain, codeFixChain, reviewLoopChain, pre-check stage (lint + ESLint CC + type-check + openspec validate), CC 21+ pause logic
+- [ ] **GitHub integration — commit generated code** — Commit generated code to feature/{client-name}/{engagement-id} branch. Wire GITHUB_TOKEN and GITHUB_REPO env vars.
 - [ ] **Vercel MCP preview deploys** — Wire VERCEL_TOKEN and VERCEL_PROJECT_ID. Preview URL stored in code_versions.vercel_preview_url.
+- [ ] **Client repo setup** — openspec init, /setup-matt-pocock-skills, /git-guardrails, /to-issues, fallow hooks install --target agent
+- [ ] **Cross-session and cross-epic context retention for client app generation** — The BSE passes prior_modules and CONTEXT.md with each generation call, but this is not fully designed for multi-session builds or large codebases. Three unresolved questions: (1) how much prior code gets passed when the client app grows across many epics — context window limits mean all files cannot be passed; (2) what happens when code changes after generation (fix loop, BA rejection + regeneration) — prior_modules context could be stale; (3) cross-epic dependencies — Epic 3 importing from Epic 1 when Epic 1 has changed. Options: A — selective context injection (pass only relevant files per epic); B — CONTEXT.md as a living contract (every shared interface and exported function signature written into CONTEXT.md as generated, grows with the project); C — GBrain from gstack (persistent knowledge base). Must be resolved before Build microservice codeGenerationChain is implemented.
 
 ---
 
 ## 🟣 Phase 6 — Integrations (Future)
 
-- [ ] **gstack /cso integration** — OWASP + STRIDE audit in Gate 7 pre-check before Gemini review. Spec as separate OpenSpec change when Gate 7 build begins.
-- [ ] **gstack /qa integration** — Real browser QA after Gate 7 Gemini approval, before BA review. Spec as separate OpenSpec change.
+- [ ] **gstack /cso integration** — OWASP + STRIDE security audit. Relevant to downstream Build microservice; spec as separate OpenSpec change when that build begins.
+- [ ] **gstack /qa integration** — Real browser QA. Relevant to downstream Build microservice; spec as separate OpenSpec change.
 - [ ] **Fireflies API auto-retrieve** — Phase 6. Paste mode working. API connection deferred.
 - [ ] **M365 SSO** — Azure AD via Supabase Auth provider. Phase 6.
 - [ ] **Jira integration via Atlassian MCP** — Deferred. Schema accommodates it.
@@ -84,7 +86,6 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 ## 🔍 Investigate Before Acting
 
 - [ ] **Prompt file architecture review** — Currently prompts exist in three places: Section 10 of BSE Instructions, src/lib/prompts/*.js files, and bse-prompt-library SKILL.md. This creates drift risk when prompts are updated. Before acting, investigate: (1) whether src/lib/prompts/ should become the single source of truth, (2) whether Section 10 of BSE Instructions should become a reference index only (file locations + purpose, not full text), (3) whether the bse-prompt-library skill should instruct Claude Code to read the live .js file rather than containing a copied version. Risk to assess: Claude Code must be able to read prompt files reliably before this is safe to do. Do not restructure until the investigation is complete and the approach is agreed.
-- [ ] **Cross-session and cross-epic context retention for client app generation** — The BSE passes prior_modules and CONTEXT.md with each codeGenerationChain call, but this is not fully designed for multi-session builds or large codebases. Three unresolved questions: (1) how much prior code gets passed when the client app grows across many epics — context window limits mean all files cannot be passed; (2) what happens when code changes after generation (Gemini fix loop, BA rejection + regeneration) — prior_modules context could be stale; (3) cross-epic dependencies — Epic 3 importing from Epic 1 when Epic 1 has changed. Options to investigate before Gate 7 is built: Option A — selective context injection (BSE analyses dependencies and passes only relevant files per epic); Option B — CONTEXT.md as a living contract (every shared interface and exported function signature written into CONTEXT.md as it is generated, grows with the project); Option C — GBrain from gstack (persistent knowledge base, BSE indexes client repo after each epic). Option B is the most practical starting point as it extends existing design. Must be resolved before Gate 7 codeGenerationChain is implemented.
 
 ---
 

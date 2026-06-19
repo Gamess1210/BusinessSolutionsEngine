@@ -54,7 +54,7 @@ Scaffolds OpenSpec in the client repo with the BSE-specific schema. Run once per
 
 ### `openspec validate --all --json`
 
-Checks structural alignment between code and spec. Catches missing endpoints, unimplemented user stories, schema mismatches. Runs in the pre-check stage before every Gemini review cycle. Output is JSON — parsed by `reviewLoopChain` to determine if pre-check passes.
+Checks structural alignment between code and spec. Catches missing endpoints, unimplemented user stories, schema mismatches. Output is JSON.
 
 ### `openspec archive {engagement-id}`
 
@@ -98,7 +98,7 @@ Initialises the BSE custom schema definition in the client repo. Run as part of 
 
 ### `/zoom-out`
 
-**Automated — called at the start of each fix cycle.** Re-reads the codebase to restore full context before applying fixes. Called before `codeFixChain` runs in the fix loop.
+**Automated — called at the start of each fix cycle.** Re-reads the codebase to restore full context before applying fixes.
 
 ### `/diagnose`
 
@@ -158,10 +158,9 @@ After Gate 7 approval, the BA or client dev team can run `fallow health --format
 
 ### What Fallow Does Not Replace
 
-Fallow operates before Gemini in the loop and catches different issues. It does not replace the Gemini 5-dimension scorecard and does not replace the ESLint complexity pre-check. All three tools are complementary:
+Fallow operates independently and catches different issues from ESLint. It does not replace the ESLint complexity pre-check. The two tools are complementary:
 - Fallow: catches structural/dead-code issues at commit time
-- ESLint: catches per-function complexity before Gemini
-- Gemini: provides holistic quality scoring across five dimensions
+- ESLint: catches per-function complexity
 
 ---
 
@@ -194,6 +193,6 @@ fallow hooks install --target agent
 |---|---|---|
 | `/tdd` | Throughout code generation | Automated |
 | `/caveman` | Throughout code generation and fix cycles | Automated |
-| `/zoom-out` | Start of each fix cycle (before codeFixChain) | Automated |
+| `/zoom-out` | Start of each fix cycle | Automated |
 | `/diagnose` | Post Gate 7 only, on BA request | Manual |
 | Fallow hook | Every git commit attempt | Automated |

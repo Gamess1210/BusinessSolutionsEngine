@@ -45,7 +45,6 @@ current_plan_phase    int default 1      -- tracks which Gate 5 phase is active 
 sharepoint_proposal_url text             -- business proposal PDF [v5.1]
 sharepoint_brief_url  text
 sharepoint_deck_url   text
-sharepoint_report_url text               -- review loop report PDF
 hubspot_deal_id       text               -- nullable; reserved for future CRM
 notes                 text
 ```
@@ -146,7 +145,7 @@ github_commit_sha   text
 github_branch       text                 -- feature/{client-name}/{engagement-id}
 vercel_preview_url  text
 modules_generated   text[]
-generation_chain    text                 -- 'codeGenerationChain' or 'codeFixChain'
+generation_chain    text
 ```
 
 ---
@@ -165,36 +164,12 @@ eslint_cc_report    jsonb                -- per-file CC scores from pre-check [v
 cc_pause_occurred   boolean default false -- true if CC 21+ pause was triggered this cycle [v5.1]
 threshold_met       boolean
 review_escalated    boolean default false
-gemini_model        text
 summary             text
 ```
 
 **New columns in v5.1:**
 - `eslint_cc_report` — per-file CC scores from pre-check stage
 - `cc_pause_occurred` — true if CC 21+ pause was triggered this cycle
-
----
-
-## Table: review_loop_reports
-
-```sql
-id                    uuid primary key default gen_random_uuid()
-engagement_id         uuid references engagements(id) on delete cascade
-created_at            timestamptz default now()
-total_cycles          int
-cycle_detail          jsonb              -- per-cycle scores, issues, fixes applied, CC scores
-final_threshold_met   boolean
-review_escalated      boolean
-cc_pauses             jsonb              -- array of {cycle, files, ba_decision} for any CC 21+ events [v5.1]
-total_duration_ms     int
-generator_model       text
-reviewer_model        text
-sharepoint_url        text               -- internal PDF location in SharePoint
-delivered_at          timestamptz        -- when Teams + email notification was sent
-```
-
-**New columns in v5.1:**
-- `cc_pauses` — array of `{cycle, files, ba_decision}` for any CC 21+ pause events
 
 ---
 
@@ -205,7 +180,7 @@ id                          uuid references auth.users(id) primary key
 full_name                   text
 role                        text default 'ba'
 power_automate_webhook_url  text
-outlook_email               text               -- for review loop report delivery
+outlook_email               text
 created_at                  timestamptz default now()
 ```
 
@@ -216,7 +191,6 @@ created_at                  timestamptz default now()
 - Team members read/write own engagements only (`team_member_id = auth.uid()`)
 - Gate approvals append-only for owning team member
 - Code reviews read-only for team members (written by server-side pipeline only)
-- Review loop reports read-only for team members
 - Client intake uses service role key server-side — never exposed to frontend
 - All tables have RLS enabled
 
@@ -242,34 +216,6 @@ created_at                  timestamptz default now()
   ],
   "has_untestable": false,
   "has_errors": true,
-  "summary": "string"
-}
-```
-
----
-
-## Gemini Scorecard JSON (stored in `code_reviews.scores` and `code_reviews.issues`)
-
-```json
-{
-  "scores": {
-    "complexity": 8,
-    "test_coverage": 6,
-    "security": 9,
-    "requirements_alignment": 8,
-    "performance": 7
-  },
-  "issues": [
-    {
-      "dimension": "test_coverage",
-      "severity": "high",
-      "description": "string",
-      "file": "string",
-      "line_range": "string",
-      "suggested_fix": "string"
-    }
-  ],
-  "threshold_met": false,
   "summary": "string"
 }
 ```

@@ -12,7 +12,6 @@
   "dependencies": {
     "@azure/msal-node": "^5.2.0",
     "@langchain/anthropic": "^0.3.34",
-    "@langchain/google-genai": "^0.1.12",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@sparticuz/chromium": "^148.0.0",
     "@supabase/supabase-js": "^2.105.4",
