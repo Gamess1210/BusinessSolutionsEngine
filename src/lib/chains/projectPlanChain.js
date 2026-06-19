@@ -1,8 +1,6 @@
 import { ChatAnthropic } from '@langchain/anthropic'
 import { SystemMessage, HumanMessage, AIMessage } from '@langchain/core/messages'
 
-const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-
 const PLANNING_DIMENSIONS = [
   'timeline and budget constraints',
   'team size and available skills',
@@ -22,13 +20,28 @@ function parseJsonWithFallback(text) {
   try {
     return JSON.parse(text)
   } catch {
+    console.log('[BSE DEBUG] projectPlan raw response (first 500 chars):', text.slice(0, 500))
     const stripped = stripJsonFences(text)
     const start = stripped.search(/[{[]/)
-    if (start === -1) throw new Error('projectPlanChain: failed to parse Claude response as JSON')
+    if (start === -1) {
+      console.log('[BSE DEBUG] projectPlan fallback: no opening bracket found')
+      throw new Error('projectPlanChain: failed to parse Claude response as JSON')
+    }
+    console.log('[BSE DEBUG] projectPlan fallback: bracket extraction triggered, bracket at index', start)
     const closeChar = stripped[start] === '{' ? '}' : ']'
     const end = stripped.lastIndexOf(closeChar)
-    if (end === -1) throw new Error('projectPlanChain: failed to parse Claude response as JSON')
-    return JSON.parse(stripped.slice(start, end + 1))
+    if (end === -1) {
+      console.log('[BSE DEBUG] projectPlan fallback: no closing bracket found — response likely truncated (length', text.length, ')')
+      throw new Error('projectPlanChain: failed to parse Claude response as JSON')
+    }
+    const slice = stripped.slice(start, end + 1)
+    console.log('[BSE DEBUG] projectPlan slice end:', slice.slice(-200))
+    try {
+      return JSON.parse(slice)
+    } catch {
+      console.log('[BSE DEBUG] projectPlan fallback: JSON.parse failed on extracted slice (length', end - start + 1, ')')
+      throw new Error('projectPlanChain: failed to parse Claude response as JSON')
+    }
   }
 }
 
@@ -44,7 +57,17 @@ function buildEngagementContext(engagement) {
 
 function discoverySystemPrompt(engagementContext) {
   const dimensionList = PLANNING_DIMENSIONS.map((d, i) => `${i + 1}. ${d}`).join('\n')
-  return `You are a senior business analyst planning the delivery of an AI solution engagement.
+  return `YOU MUST RESPOND WITH VALID JSON ONLY. THIS IS MANDATORY. NO EXCEPTIONS.
+
+Your response must be exactly one of these two formats and nothing else:
+{"type": "question", "content": "your single question here"}
+{"type": "plan", "content": {"markdown": "...", "openspec": "...", "structured": {...}}}
+
+ANY response that is not valid JSON starting with { will be treated as a system failure.
+DO NOT write questions as plain text. DO NOT include any text before or after the JSON.
+DO NOT use markdown. DO NOT use code fences.
+
+You are a senior business analyst planning the delivery of an AI solution engagement.
 
 Engagement context:
 ${engagementContext}
@@ -54,12 +77,10 @@ Your goal: gather all information needed to produce a detailed project plan by a
 You MUST address all of these dimensions before generating a plan. Ask follow-up questions on any dimension that needs more detail:
 ${dimensionList}
 
-ALWAYS respond with valid JSON in one of these two formats:
-
-If more information is needed:
+If more information is needed, respond with:
 { "type": "question", "content": "<your question text>" }
 
-If all dimensions are covered with sufficient detail:
+If all dimensions are covered with sufficient detail, respond with:
 {
   "type": "plan",
   "content": {
@@ -81,10 +102,10 @@ If all dimensions are covered with sufficient detail:
       ]
     }
   }
+}`
 }
 
-Respond ONLY with valid JSON. No preamble, no explanation outside the JSON.`
-}
+const JSON_REMINDER = '\n\nREMINDER: Respond only with valid JSON: {"type": "question", "content": "..."} or {"type": "plan", "content": {...}}. No other text.'
 
 function conversationToMessages(conversation) {
   return conversation.map(msg => {
@@ -99,16 +120,28 @@ function extractContent(response) {
 }
 
 export async function processMessage(conversation, engagement, message) {
+  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const engagementContext = buildEngagementContext(engagement)
   const systemMsg = new SystemMessage(discoverySystemPrompt(engagementContext))
   const history = conversationToMessages(conversation)
-  const seed = message ? new HumanMessage(message) : new HumanMessage('Please start with your first planning question.')
+  const seedText = (message ?? 'Please start with your first planning question.') + JSON_REMINDER
+  const seed = new HumanMessage(seedText)
   const response = await claude.invoke([systemMsg, ...history, seed])
   return parseJsonWithFallback(extractContent(response))
 }
 
 function updateSystemPrompt(engagementContext, currentPlan) {
-  return `You are a senior business analyst updating a project plan based on a change request.
+  return `YOU MUST RESPOND WITH VALID JSON ONLY. THIS IS MANDATORY. NO EXCEPTIONS.
+
+Your response must be exactly one of these two formats and nothing else:
+{"type": "question", "content": "your single question here"}
+{"type": "plan", "content": {"markdown": "...", "openspec": "...", "structured": {...}}}
+
+ANY response that is not valid JSON starting with { will be treated as a system failure.
+DO NOT write questions as plain text. DO NOT include any text before or after the JSON.
+DO NOT use markdown. DO NOT use code fences.
+
+You are a senior business analyst updating a project plan based on a change request.
 
 Engagement context:
 ${engagementContext}
@@ -118,7 +151,7 @@ ${currentPlan}
 
 Apply the BA's change instruction to the plan. Only modify sections referenced in the instruction.
 
-Return the updated plan as JSON:
+Respond with:
 {
   "type": "plan",
   "content": {
@@ -126,16 +159,15 @@ Return the updated plan as JSON:
     "openspec": "<updated OpenSpec WHEN/THEN/AND format>",
     "structured": { "epics": [...] }
   }
-}
-
-Respond ONLY with valid JSON. No preamble.`
+}`
 }
 
 export async function processPlanUpdate(conversation, engagement, instruction) {
+  const claude = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const engagementContext = buildEngagementContext(engagement)
   const planEntry = [...conversation].reverse().find(m => m.role === 'assistant' && m.type === 'plan')
   const currentPlan = planEntry ? JSON.stringify(planEntry.content) : 'No existing plan'
   const systemMsg = new SystemMessage(updateSystemPrompt(engagementContext, currentPlan))
-  const response = await claude.invoke([systemMsg, new HumanMessage(instruction)])
+  const response = await claude.invoke([systemMsg, new HumanMessage(instruction + JSON_REMINDER)])
   return parseJsonWithFallback(extractContent(response))
 }

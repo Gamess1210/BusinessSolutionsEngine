@@ -80,7 +80,7 @@ export default async function handler(req, res) {
 
   try {
     await persistContext(supabaseAdmin, engagementId, context)
-    const proposalJson = await proposalGenerationChain.invoke({
+    const proposalJson = await proposalGenerationChain({
       engagement,
       chosenSolution: engagement.chosen_solution,
       context,

@@ -11,7 +11,7 @@ Spec files live in the client repo at:
 openspec/changes/{engagement-id}/specs/{capability}/spec.md
 ```
 
-After Gate 5 approval, `openspec archive` runs and moves specs to:
+After Gate 7 approval, `openspec archive` runs and moves specs to:
 ```
 openspec/specs/{capability}/spec.md   ← permanent record
 ```
@@ -20,7 +20,7 @@ Supabase `specifications` table stores pointers only:
 - `repo_path` — path to `openspec/changes/{engagement-id}/` in client repo
 - `commit_sha` — SHA of the approved spec commit
 
-**Never store spec content in Supabase.** The repo is the source of truth from Gate 4 onwards.
+**Never store spec content in Supabase.** The repo is the source of truth from Gate 6 onwards.
 
 ---
 
@@ -50,7 +50,7 @@ Rules:
 
 ### `openspec init`
 
-Scaffolds OpenSpec in the client repo with the BSE-specific schema. Run once per client repo during Phase C setup (after Gate 4 approval).
+Scaffolds OpenSpec in the client repo with the BSE-specific schema. Run once per client repo during Phase C setup (after Gate 6 approval).
 
 ### `openspec validate --all --json`
 
@@ -58,7 +58,7 @@ Checks structural alignment between code and spec. Catches missing endpoints, un
 
 ### `openspec archive {engagement-id}`
 
-Merges spec files from `openspec/changes/` into `openspec/specs/` as the permanent capability record in the client repo. Runs automatically after Gate 5 approval and before `outputGenerationChain`. Must be called by BSE explicitly — it does not run automatically.
+Merges spec files from `openspec/changes/` into `openspec/specs/` as the permanent capability record in the client repo. Runs automatically after Gate 7 approval and before `outputGenerationChain`. Must be called by BSE explicitly — it does not run automatically.
 
 ### `openspec schema init`
 
@@ -68,7 +68,7 @@ Initialises the BSE custom schema definition in the client repo. Run as part of 
 
 ## Matt Pocock Skills — Setup Order and Usage
 
-### Setup order (must run in this order after Gate 4 approval)
+### Setup order (must run in this order after Gate 6 approval)
 
 1. `openspec init` — scaffolds OpenSpec in the client repo with BSE-specific schema
 2. `/setup-matt-pocock-skills` — configures issue tracker, triage label vocabulary, and domain doc layout. **Must run before `/to-issues`**. Without it, `/to-issues` creates issues without proper metadata silently.
@@ -102,7 +102,7 @@ Initialises the BSE custom schema definition in the client repo. Run as part of 
 
 ### `/diagnose`
 
-**Manual — BA-invoked post-Gate 5 only. Not used in the automated loop.** Available to the BA as a manual tool after Gate 5 for deep investigation of specific issues before deciding to approve or reject. If used in the automated loop, it is a bug.
+**Manual — BA-invoked post-Gate 7 only. Not used in the automated loop.** Available to the BA as a manual tool after Gate 7 for deep investigation of specific issues before deciding to approve or reject. If used in the automated loop, it is a bug.
 
 ---
 
@@ -152,9 +152,9 @@ FALLOW_GATE_MIN_VERSION=2.46.0    # Minimum Fallow version for uncommitted-chang
 
 Adjust via `FALLOW_GATE_MIN_VERSION` env var if needed.
 
-### Post Gate 5 — `fallow health` (manual, BA-invoked)
+### Post Gate 7 — `fallow health` (manual, BA-invoked)
 
-After Gate 5 approval, the BA or client dev team can run `fallow health --format json` in the client repo to get an objective complexity and maintainability picture before merging. This surfaces file health scores, git churn hotspots, and ranked refactoring targets. It is not a pipeline gate — it is a decision support tool.
+After Gate 7 approval, the BA or client dev team can run `fallow health --format json` in the client repo to get an objective complexity and maintainability picture before merging. This surfaces file health scores, git churn hotspots, and ranked refactoring targets. It is not a pipeline gate — it is a decision support tool.
 
 ### What Fallow Does Not Replace
 
@@ -167,7 +167,7 @@ Fallow operates before Gemini in the loop and catches different issues. It does 
 
 ## Client Repo Setup — Full Sequence
 
-Run once per client repo after Gate 4 approval, before code generation begins:
+Run once per client repo after Gate 6 approval, before code generation begins:
 
 ```bash
 # 1. Scaffold OpenSpec with BSE-specific schema
@@ -195,5 +195,5 @@ fallow hooks install --target agent
 | `/tdd` | Throughout code generation | Automated |
 | `/caveman` | Throughout code generation and fix cycles | Automated |
 | `/zoom-out` | Start of each fix cycle (before codeFixChain) | Automated |
-| `/diagnose` | Post Gate 5 only, on BA request | Manual |
+| `/diagnose` | Post Gate 7 only, on BA request | Manual |
 | Fallow hook | Every git commit attempt | Automated |

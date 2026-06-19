@@ -1,6 +1,6 @@
 # BSE Build Backlog
 **Last updated:** 22 May 2026
-**Instructions version:** v5.6
+**Instructions version:** v5.7
 **Branch:** feature/geoff-gate5-build
 
 This is the living backlog for the BSE build. Items are grouped by priority and type. Update this file after every session.
@@ -10,7 +10,7 @@ This is the living backlog for the BSE build. Items are grouped by priority and 
 ## 🔴 Immediate — Before Next Gate Build
 
 - [ ] **Implement brain-dump clarification prompt (Prompt 10.10)** — braindumpStructuringPrompt.js and api/pipeline/braindump-clarify.js do not yet exist. Prompt 10.10 is defined in BSE Instructions v5.6 Section 10 and bse-prompt-library SKILL.md. Implement as NON-PIPELINE direct AI call. Before saving brain-dump input, check if ambiguous — if so, ask one clarifying question and wait for BA response. If clear, save directly. Label: `// NON-PIPELINE: direct AI call`
-- [ ] **Smoke test Gate 5 (Project Plan)** — Create Tester05 engagement, run through Gates 1–4, verify project plan chat interface works end to end, Claude asks all 8 discovery dimensions, plan generates in both Markdown and OpenSpec format, approve advances to spec_pending
+- [ ] **Smoke test Gate 5 (three-phase)** — Phase 1: verify CLIENT_BUILD_INSTRUCTIONS.md generates and BA can edit/approve. Phase 2: verify epic discovery questions fire, Claude proposes epic list, BA can reshape and approve. Phase 3: verify per-epic story generation, WHEN/THEN/AND criteria, BA approves each epic before next begins. Verify all phases advance to spec_pending on completion.
 - [ ] **Archive gate4b-project-plan OpenSpec change** — Run `/opsx:archive "gate4b-project-plan"` once smoke test passes
 - [ ] **Verify contextual re-injection (tasks 6.1–6.5)** — Manual browser verification of supplementary context banner, regeneration flow, voided gate_approvals record
 - [ ] **Test richer Document B** — Run full Gate 3 with new proposalGenerationChain, confirm pain points table, stakeholder severity, ROI framing, success criteria all appear

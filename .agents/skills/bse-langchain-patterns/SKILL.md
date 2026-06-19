@@ -30,9 +30,9 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 
 ---
 
-## Model Assignment Table [v5.1 CHANGE] [v5.6 CHANGE]
+## Model Assignment Table [v5.1 CHANGE] [v5.6 CHANGE] [v5.7 CHANGE]
 
-**Gate 4 — no AI chain [v5.4]:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. `contextGenerationChain` and `openspecGenerationChain` run after Gate 5 approval, not Gate 4.
+**Gate 4 — no AI chain [v5.4]:** Gate 4 (Client Decision and Context) is pure human input capture. No AI chain runs at this gate. After Gate 4 approval, Gate 5 begins with `buildInstructionsChain` running automatically.
 
 | Chain | File | Model | Reason |
 |---|---|---|---|
@@ -40,7 +40,8 @@ LangChain is used for all multi-step AI sequences. Direct AI API calls are not p
 | quickIdeasChain | chains/quickIdeas.js | Claude (claude-sonnet-4-20250514) | Solution generation |
 | deepAnalysisChain | chains/deepAnalysis.js | Claude (claude-sonnet-4-20250514) | Deep solution generation |
 | proposalGenerationChain | chains/proposalGeneration.js | Claude (claude-sonnet-4-20250514) | Business proposal document generation |
-| projectPlanChain | chains/projectPlan.js | Claude (claude-sonnet-4-20250514) | Interactive project planning — discovery questions and plan generation [v5.6 NEW] |
+| buildInstructionsChain | chains/buildInstructions.js | Claude (claude-sonnet-4-20250514) | Generates CLIENT_BUILD_INSTRUCTIONS.md from engagement data — Gate 5 Phase 1 [v5.7 NEW] |
+| projectPlanChain | chains/projectPlan.js | Claude (claude-sonnet-4-20250514) | Three-phase: Phase 1 build instructions (buildInstructionsChain), Phase 2 epic discovery chat, Phase 3 per-epic story and task generation [v5.7 REDESIGN] |
 | contextGenerationChain | chains/contextGeneration.js | Claude (claude-sonnet-4-20250514) | Domain vocabulary extraction — runs after Gate 5 approval |
 | openspecGenerationChain | chains/openspecGeneration.js | Claude (claude-sonnet-4-20250514) | OpenSpec file generation — runs after Gate 5 approval, epic by epic |
 | codeGenerationChain | chains/codeGeneration.js | Claude (claude-sonnet-4-20250514) | Code generation |

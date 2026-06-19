@@ -129,12 +129,10 @@ const prompt = ChatPromptTemplate.fromMessages([
 ])
 
 const formatStep = RunnableLambda.from(formatInput)
-const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
 const outputParser = RunnableLambda.from(parseJsonWithFallback)
 
-export const changeManagementChain = RunnableSequence.from([
-  formatStep,
-  prompt,
-  claudeModel,
-  outputParser,
-])
+export async function changeManagementChain(input) {
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const chain = RunnableSequence.from([formatStep, prompt, claudeModel, outputParser])
+  return chain.invoke(input)
+}

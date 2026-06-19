@@ -22,7 +22,11 @@
       "Bash(mkdir -p \"openspec/changes/gate3-proposal-loop/specs/gate2-solutions-review\")",
       "Bash(dir C:\\\\Users\\\\GeoffAmess\\\\BusinessSolutionsEngine\\\\openspec\\\\specs *)",
       "PowerShell(Move-Item *)",
-      "Bash(exit 0)"
+      "Bash(exit 0)",
+      "Bash(node -e \"const { ChatAnthropic } = require\\('@langchain/anthropic'\\); const m = new ChatAnthropic\\({ model: 'claude-sonnet-4-20250514', max_tokens: 16000 }\\); console.log\\('max_tokens:', m.maxTokens\\);\")",
+      "Bash(node -e \"const { ChatAnthropic } = require\\('@langchain/anthropic'\\); const m = new ChatAnthropic\\({ model: 'claude-sonnet-4-20250514', max_tokens: 16000, anthropicApiKey: 'dummy' }\\); console.log\\('maxTokens:', m.maxTokens\\); console.log\\('invocationParams:', JSON.stringify\\(m.invocationParams\\({}\\)\\)\\);\")",
+      "Bash(node -e \"const { ChatAnthropic } = require\\('@langchain/anthropic'\\); const m = new ChatAnthropic\\({ model: 'claude-sonnet-4-20250514', maxTokens: 16000, anthropicApiKey: 'dummy' }\\); console.log\\('maxTokens:', m.maxTokens\\); console.log\\('invocationParams:', JSON.stringify\\(m.invocationParams\\({}\\)\\)\\);\")",
+      "Bash(node -e ' *)"
     ]
   }
 }

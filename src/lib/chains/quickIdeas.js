@@ -34,15 +34,13 @@ const promptStep = RunnableLambda.from(({ structured_brief, industry }) => ({
 }))
 
 const claudeStep = RunnableLambda.from(async (input) => {
-  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
+  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
   return model.invoke(input)
 })
 
 const outputParser = RunnableLambda.from(parseJsonWithFallback)
 
-export const quickIdeasChain = RunnableSequence.from([
-  promptStep,
-  quickIdeasPrompt,
-  claudeStep,
-  outputParser,
-])
+export async function quickIdeasChain(input) {
+  const chain = RunnableSequence.from([promptStep, quickIdeasPrompt, claudeStep, outputParser])
+  return chain.invoke(input)
+}

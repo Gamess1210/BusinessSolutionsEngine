@@ -43,15 +43,13 @@ async function parseJsonWithFallback(message) {
   }
 }
 
-const formatStep = RunnableLambda.from(({ engagement }) => buildPromptInputs(engagement))
-
-const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514' })
-
-const outputParser = RunnableLambda.from(parseJsonWithFallback)
-
-export const documentAGenerationChain = RunnableSequence.from([
-  formatStep,
-  documentAPrompt,
-  claudeModel,
-  outputParser,
-])
+export async function documentAGenerationChain(input) {
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const chain = RunnableSequence.from([
+    RunnableLambda.from(({ engagement }) => buildPromptInputs(engagement)),
+    documentAPrompt,
+    claudeModel,
+    RunnableLambda.from(parseJsonWithFallback),
+  ])
+  return chain.invoke(input)
+}
