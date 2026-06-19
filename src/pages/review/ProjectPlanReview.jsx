@@ -333,7 +333,7 @@ export default function ProjectPlanReview() {
       </button>
 
       <div className="bg-white rounded-lg border border-grey-mid p-6 mb-6">
-        <h1 className="text-2xl font-bold text-navy">Gate 4b — Project Plan</h1>
+        <h1 className="text-2xl font-bold text-navy">Gate 5 — Project Plan</h1>
         <p className="text-grey-dark text-sm mt-1">
           {[engagement?.client_name, engagement?.organisation].filter(Boolean).join(' — ')}
         </p>

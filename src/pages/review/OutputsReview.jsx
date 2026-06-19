@@ -14,12 +14,12 @@ export default function OutputsReview() {
       </button>
 
       <div className="bg-white rounded-lg border border-grey-mid p-6 mb-6">
-        <h1 className="text-2xl font-bold text-navy">Gate 7 — Output Review</h1>
+        <h1 className="text-2xl font-bold text-navy">Gate 7 — Output Package & Download</h1>
       </div>
 
       <div className="bg-white rounded-lg border border-grey-mid p-8 text-center">
         <p className="text-navy font-semibold mb-2">Coming soon — Gate 7</p>
-        <p className="text-grey-dark text-sm">BA previews the final client documents and approves the engagement for delivery.</p>
+        <p className="text-grey-dark text-sm">BA reviews the final client document package and approves it for download and delivery.</p>
       </div>
     </div>
   )

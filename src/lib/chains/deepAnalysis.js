@@ -36,7 +36,7 @@ const prepareCall1 = RunnableLambda.from(({ structured_brief, industry }) => ({
 
 const call1 = RunnableLambda.from(async ({ brief, industry }) => {
   const messages = await deepAnalysisPrompt.invoke({ brief, industry })
-  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const response = await model.invoke(messages)
   const deepBrief = await parseJsonWithFallback(response)
   return { deep_brief: deepBrief, industry }
@@ -49,7 +49,7 @@ const prepareCall2 = RunnableLambda.from(({ deep_brief, industry }) => ({
 
 const call2 = RunnableLambda.from(async ({ brief, industry }) => {
   const messages = await solutionsPrompt.invoke({ brief, industry })
-  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const response = await model.invoke(messages)
   return parseJsonWithFallback(response)
 })

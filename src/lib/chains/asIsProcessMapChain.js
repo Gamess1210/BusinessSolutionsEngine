@@ -86,7 +86,9 @@ Stakeholders:
 {stakeholders}
 
 Constraints and Dependencies:
-{constraints}`
+{constraints}
+
+Return only the JSON object. No markdown fences, no explanation.`
 
 const prompt = ChatPromptTemplate.fromMessages([
   ['system', SYSTEM_PROMPT],
@@ -97,7 +99,7 @@ const formatStep = RunnableLambda.from(formatInput)
 const outputParser = RunnableLambda.from(parseJsonWithFallback)
 
 export async function asIsProcessMapChain(input) {
-  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const claudeModel = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   const chain = RunnableSequence.from([formatStep, prompt, claudeModel, outputParser])
   return chain.invoke(input)
 }

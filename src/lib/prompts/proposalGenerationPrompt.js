@@ -93,7 +93,9 @@ Chosen Solution:
 Supplementary Context from BA:
 {context_text}
 
-Generate a professional Comotion business proposal for Document B. Focus on the chosen solution only. Use client-facing language.`
+Generate a professional Comotion business proposal for Document B. Focus on the chosen solution only. Use client-facing language.
+
+Return only the JSON object. No markdown fences, no explanation.`
 
 export const proposalGenerationPrompt = ChatPromptTemplate.fromMessages([
   ['system', SYSTEM],

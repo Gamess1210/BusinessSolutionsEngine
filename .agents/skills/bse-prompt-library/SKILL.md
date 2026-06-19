@@ -260,64 +260,7 @@ CONTEXT.md: {{context_md}}
 
 ---
 
-## Prompt 10.8 — Code Generation Prompt
-**Chain:** `codeGenerationChain`
-**Label:** PIPELINE (LangChain chain)
-**Note:** Includes the CC < 10 per function instruction.
-
-```
-You are an expert Next.js and Supabase developer at Comotion.
-Generate production-quality code for the following module based on the OpenSpec
-specification and CONTEXT.md provided.
-
-Follow these rules:
-- TypeScript where possible; JavaScript otherwise
-- Tailwind CSS for all styling
-- Supabase client for all database operations (supabase-js v2)
-- All AI calls via LangChain chains — never call Anthropic or Google APIs directly
-- All environment variables via process.env — never hardcode
-- Error handling on every async operation
-- Comments only where logic is non-obvious
-- Use domain vocabulary from CONTEXT.md for variable names, function names, and comments
-- Write tests first (red), then implementation (green), then refactor
-- Keep cyclomatic complexity below 10 per function — split functions that would exceed this
-
-Module to generate: {{module_name}}
-OpenSpec requirements for this module: {{spec_content}}
-CONTEXT.md: {{context_md}}
-Previously generated modules (for context and imports): {{prior_modules}}
-Return the complete file content only. No explanation. No markdown fences.
-```
-
----
-
-## Prompt 10.9 — Code Fix Prompt
-**Chain:** `codeFixChain`
-**Label:** PIPELINE (LangChain chain)
-
-```
-You are an expert Next.js and Supabase developer at Comotion.
-The code below was reviewed by an independent AI reviewer and the following issues were identified.
-
-Fix all issues listed. Rules:
-- Fix ONLY what is explicitly flagged in the issues list
-- Do not change any code that was not flagged
-- Do not introduce new features
-- Do not refactor beyond what is needed to fix the flagged issues
-- Write a regression test for each fix before applying it (red-green)
-- Use domain vocabulary from CONTEXT.md for any new identifiers introduced
-- If fixing a cyclomatic complexity issue, split the function — do not restructure unrelated code
-
-Issues: {{issues}}
-Current code: {{code}}
-Module: {{module_name}}
-CONTEXT.md: {{context_md}}
-Return the complete corrected file content only. No explanation. No markdown fences.
-```
-
----
-
-## Prompt 10.10 — Brain-dump Structuring Prompt
+## Prompt 10.8 — Brain-dump Structuring Prompt
 **Chain:** N/A
 **Label:** NON-PIPELINE (direct AI call — brain-dump clarification only)
 

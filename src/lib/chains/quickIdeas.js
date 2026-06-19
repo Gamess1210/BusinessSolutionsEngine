@@ -34,7 +34,7 @@ const promptStep = RunnableLambda.from(({ structured_brief, industry }) => ({
 }))
 
 const claudeStep = RunnableLambda.from(async (input) => {
-  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 8192 })
+  const model = new ChatAnthropic({ model: 'claude-sonnet-4-20250514', maxTokens: 16000 })
   return model.invoke(input)
 })
 

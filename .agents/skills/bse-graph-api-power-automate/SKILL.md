@@ -56,9 +56,7 @@ Business Solutions/
         └── [YYYY]/
               ├── [ClientName]_[YYYY-MM-DD]_BusinessProposal.pdf   ← Gate 3
               ├── [ClientName]_[YYYY-MM-DD]_Brief.pdf              ← Gate 6
-              ├── [ClientName]_[YYYY-MM-DD]_Proposal.pdf           ← Gate 6
-              └── _internal/
-                    └── [ClientName]_[YYYY-MM-DD]_ReviewReport.pdf ← internal
+              └── [ClientName]_[YYYY-MM-DD]_Proposal.pdf           ← Gate 6
 ```
 
 No client PII in folder paths or file names. Client name only.
@@ -84,7 +82,7 @@ await fetch(process.env.POWER_AUTOMATE_INTAKE_TRIGGER_URL, {
 
 ---
 
-## All Seven Power Automate Flows [v5.1 CHANGE]
+## All Power Automate Flows [v5.1 CHANGE]
 
 ### Flow 1 — Client intake notification
 
@@ -101,15 +99,7 @@ await fetch(process.env.POWER_AUTOMATE_INTAKE_TRIGGER_URL, {
 | Action | Outlook email to `client_email` with business proposal PDF attached |
 | Env var | `POWER_AUTOMATE_PROPOSAL_SEND_TRIGGER_URL` |
 
-### Flow 3 — Review loop report delivery
-
-| Field | Value |
-|---|---|
-| Trigger | `review_loop_reports` record created |
-| Action | Teams message + Outlook email with full report detail |
-| Env var | `POWER_AUTOMATE_REVIEW_REPORT_TRIGGER_URL` |
-
-### Flow 4 — CC 21+ pause notification [v5.1 NEW]
+### Flow 3 — CC 21+ pause notification [v5.1 NEW]
 
 | Field | Value |
 |---|---|
@@ -150,7 +140,6 @@ await fetch(process.env.POWER_AUTOMATE_INTAKE_TRIGGER_URL, {
 POWER_AUTOMATE_INTAKE_TRIGGER_URL=
 POWER_AUTOMATE_PROPOSAL_SEND_TRIGGER_URL=   # Gate 3 client send [v5.1]
 POWER_AUTOMATE_CC_PAUSE_TRIGGER_URL=        # ESLint CC 21+ pause notification [v5.1]
-POWER_AUTOMATE_REVIEW_REPORT_TRIGGER_URL=
 POWER_AUTOMATE_GATE6_TRIGGER_URL=
 POWER_AUTOMATE_FAILURE_TRIGGER_URL=
 ```
@@ -191,4 +180,3 @@ MSAL, Puppeteer, and pptxgenjs are not edge-compatible — serverless only (not 
 |---|---|---|---|
 | Business Proposal PDF | Gate 3 | Client-facing. Delivered by Power Automate email to `client_email`. No internal pipeline data. | `[ClientName]/[YYYY]/[ClientName]_[YYYY-MM-DD]_BusinessProposal.pdf` |
 | Final Client Brief PDF | Gate 6 | Client-facing. No scorecard data. | `[ClientName]/[YYYY]/[ClientName]_[YYYY-MM-DD]_Brief.pdf` |
-| Review Loop Report PDF | Gate 6 | Internal only. Full review cycle detail including ESLint CC scores. Never sent to clients. | `[ClientName]/[YYYY]/_internal/[ClientName]_[YYYY-MM-DD]_ReviewReport.pdf` |

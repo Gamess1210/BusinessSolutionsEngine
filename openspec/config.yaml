@@ -4,27 +4,27 @@ context: |
   Project: Business Solutions Engine (BSE)
   Owner: Comotion Business Solutions division
 
-  Tech stack: React 19, Vite, Tailwind CSS, Supabase (supabase-js v2), 
-  LangChain 0.3.x, Next.js API routes on Vercel serverless, 
-  Anthropic API (claude-sonnet-4-20250514), Google AI (gemini-2.0-flash),
+  Tech stack: React 19, Vite, Tailwind CSS, Supabase (supabase-js v2),
+  LangChain 0.3.x, Next.js API routes on Vercel serverless,
+  Anthropic API (claude-sonnet-4-20250514),
   Puppeteer (@sparticuz/chromium), Microsoft Graph API, Power Automate
 
   Architecture:
   - All AI pipeline steps use LangChain chains in src/lib/chains/
-  - Claude generates code and content; Gemini reviews code only
-  - Never use the same model for generation and review
+  - BSE ends at Spec Approval and Output Package generation — does not generate, review, or deploy client code
   - All gate state enforced server-side in Vercel API routes
   - Frontend reflects state only — never controls pipeline progression
   - Supabase is the state store; client GitHub repo is spec source of truth
   - All documents follow comotion-a4-html-template.html standard
 
-  Six pipeline gates — human approval required at each:
+  Seven pipeline gates — human approval required at each:
   - Gate 1: Brief Review
   - Gate 2: Solutions Review
   - Gate 3: Business Proposal (client-facing PDF, sent from app)
-  - Gate 4: Spec Approval (OpenSpec files in client repo)
-  - Gate 5: Code Review (Gemini scorecard + ESLint CC scores)
-  - Gate 6: Output Review (final client documents)
+  - Gate 4: Client Decision and Context (BA selects chosen solution; optional supplementary context)
+  - Gate 5: Project Plan (BA and Claude build structured project plan)
+  - Gate 6: Spec Approval (OpenSpec files committed to client repo)
+  - Gate 7: Output Package & Download (BA reviews and approves final client document package)
 
   Conventions:
   - TypeScript where possible, JavaScript otherwise
@@ -54,6 +54,5 @@ rules:
     - Flag any task that requires a schema migration
     - Flag any task that touches a LangChain chain
   design:
-    - Document model assignment explicitly (Claude vs Gemini)
     - Note any Power Automate flows triggered
     - Include error recovery path for every chain

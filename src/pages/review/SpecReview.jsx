@@ -14,12 +14,12 @@ export default function SpecReview() {
       </button>
 
       <div className="bg-white rounded-lg border border-grey-mid p-6 mb-6">
-        <h1 className="text-2xl font-bold text-navy">Gate 5 — Spec Review</h1>
+        <h1 className="text-2xl font-bold text-navy">Gate 6 — Spec Approval</h1>
       </div>
 
       <div className="bg-white rounded-lg border border-grey-mid p-8 text-center">
-        <p className="text-navy font-semibold mb-2">Coming soon — Gate 5</p>
-        <p className="text-grey-dark text-sm">BA reviews the OpenSpec files generated in the client repo and approves them to trigger code generation.</p>
+        <p className="text-navy font-semibold mb-2">Coming soon — Gate 6</p>
+        <p className="text-grey-dark text-sm">BA reviews the OpenSpec files committed to the client repo and approves them as the final specification handoff.</p>
       </div>
     </div>
   )
